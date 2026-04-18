@@ -1,0 +1,38 @@
+# dependencies
+/node_modules/
+
+# local environment files
+.env
+.env.local
+.env.*.local
+
+# npm logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# output
+/dist/
+/build/
+
+# editor directories and files
+.vscode/*
+!.vscode/startup.md
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# system files
+.DS_Store
+Thumbs.db
+
+# test coverage
+/coverage/
+
+# local lock file for npm if not committed
+# package-lock.json
+
+# optional: ignore runtime logs
+*.log
