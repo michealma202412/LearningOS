@@ -11,7 +11,8 @@ export function LearningPage({ page }: LearningPageProps) {
   const pageRoute = `/learn/${page.subjectSlug}/${page.topicSlug}/${page.pageSlug}`
 
   useEffect(() => {
-    const url = window.location.origin + pageRoute
+    const baseUrl = ((import.meta as unknown) as { env: { BASE_URL?: string } }).env.BASE_URL || ''
+    const url = `${window.location.origin}${baseUrl}${pageRoute}`
     QRCode.toDataURL(url)
       .then(setQrUrl)
       .catch((error: unknown) => {
