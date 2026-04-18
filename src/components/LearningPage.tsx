@@ -14,7 +14,7 @@ export function LearningPage({ page }: LearningPageProps) {
     const url = window.location.origin + pageRoute
     QRCode.toDataURL(url)
       .then(setQrUrl)
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error('QR code generation failed', error)
       })
   }, [pageRoute])

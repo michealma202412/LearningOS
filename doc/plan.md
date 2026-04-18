@@ -501,25 +501,77 @@ http://localhost:5173
 
 ### 用 GitHub Pages
 
+如果你还没有 Git 仓库：
+
 ```bash
 git init
 git add .
 git commit -m "init"
-git remote add origin xxx
-git push
+git branch -M main
+git remote add origin https://github.com/<你的用户名>/<仓库名>.git
 ```
 
-然后开启 Pages
+先把项目部署配置好：
+
+```bash
+npm install
+npm run build
+```
+
+如果你使用的是 VitePress，构建输出通常在 `docs/.vitepress/dist`；如果是标准 Vite React 项目，输出在 `dist/`。
+
+最简单的部署方式是使用 `gh-pages`：
+
+```bash
+npm install --save-dev gh-pages
+```
+
+然后在 `package.json` 里增加脚本：
+
+```json
+"scripts": {
+  "build": "vite build",
+  "deploy": "gh-pages -d dist"
+}
+```
+
+发布网站：
+
+```bash
+npm run build
+npm run deploy
+```
+
+或者你也可以直接在 GitHub 上开启 Pages：
+
+1. 推送代码到 `main` 分支：
+   ```bash
+git push -u origin main
+```
+2. 打开 GitHub 仓库设置 -> Pages。
+3. 选择发布来源为 `gh-pages` 分支，或者如果你使用 `docs/` 文件夹构建，选择 `main` 分支下的 `docs` 目录。
+4. 保存后等待几分钟，GitHub 会生成访问链接。
+
+如果你想把页面挂到自定义域，还可以在仓库根目录添加 `CNAME` 文件，内容为你的域名。
 
 ---
 
 ### 加速（关键）
 
-接入 Cloudflare：
+接入 Cloudflare 能让你的教育网站更稳定、访问更快：
 
-* DNS托管
-* CDN自动加速
-* 全球访问更稳
+* 将域名 DNS 托管到 Cloudflare
+* 配置 Cloudflare 的代理（橙云）
+* 启用 CDN 缓存静态资源
+* 启用 TLS/HTTPS，确保扫码访问安全
+
+如果你使用 GitHub Pages 和自有域名：
+
+1. 在 GitHub Pages 设置中填写你的自定义域名。
+2. 在 Cloudflare DNS 中添加对应的 `CNAME` 或 `A` 记录。
+3. 启用 Cloudflare 自动 HTTPS 重写。
+
+---
 
 ---
 
