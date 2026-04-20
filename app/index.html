@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LearningOS - 今日复习看板</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      text-align: center;
+    }
+
+    h1 {
+      color: #333;
+      font-size: 32px;
+      margin-bottom: 15px;
+    }
+
+    .todayDate {
+      color: #999;
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+
+    .action-button {
+      display: inline-block;
+      padding: 12px 30px;
+      background: #4CAF50;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+
+    .action-button:hover {
+      background: #45a049;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+    }
+
+    .dashboard {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 25px;
+      font-size: 24px;
+      border-bottom: 3px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+
+    .empty-state-text {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+
+    .folder-section {
+      margin-bottom: 30px;
+      padding-bottom: 30px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .folder-section:last-child {
+      border-bottom: none;
+    }
+
+    .folder-title {
+      font-size: 18px;
+      color: #667eea;
+      font-weight: bold;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .audio-card {
+      background: #f9f9f9;
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .audio-card audio {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .complete-btn {
+      padding: 8px 16px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      white-space: nowrap;
+      transition: all 0.3s;
+    }
+
+    .complete-btn:hover {
+      background: #45a049;
+      transform: scale(1.05);
+    }
+
+    .audio-info {
+      font-size: 12px;
+      color: #999;
+      white-space: nowrap;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #667eea;
+      font-size: 18px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📚 LearningOS - 今日复习看板</h1>
+      <div class="todayDate" id="todayDate"></div>
+      <a href="recorder.html" class="action-button">🎤 去录音</a>
+    </div>
+
+    <div class="dashboard">
+      <h2>📊 今日待复习</h2>
+      
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-number" id="totalCount">-</div>
+          <div class="stat-label">待复习项目</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="totalFolders">-</div>
+          <div class="stat-label">活跃文件夹</div>
+        </div>
+      </div>
+
+      <div id="list" class="list-container"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { renderTodayList } from "./js/app.js"
+    import { getAllAudios } from "./js/db.js"
+    import { isToday } from "./js/scheduler.js"
+
+    // 显示今日日期
+    const today = new Date()
+    document.getElementById("todayDate").textContent = 
+      `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+
+    // 初始化列表
+    async function init() {
+      const listContainer = document.getElementById("list")
+      listContainer.innerHTML = '<div class="loading"><div class="spinner"></div>加载中...</div>'
+
+      try {
+        await renderTodayList()
+
+        // 更新统计数据
+        const audios = await getAllAudios()
+        const todayAudios = audios.filter(a =>
+          a.reviews.some(r => !r.done && isToday(r.date))
+        )
+
+        const folders = new Set(todayAudios.map(a => a.folder))
+
+        document.getElementById("totalCount").textContent = todayAudios.length
+        document.getElementById("totalFolders").textContent = folders.size
+
+        if (todayAudios.length === 0) {
+          listContainer.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">🎉</div>
+              <div class="empty-state-text">太棒了！今天没有待复习的项目</div>
+              <p style="color: #ccc; font-size: 14px;">去 <a href="recorder.html" style="color: #667eea; text-decoration: underline;">录音页面</a> 添加新内容吧</p>
+            </div>
+          `
+        }
+      } catch (error) {
+        console.error("加载失败:", error)
+        listContainer.innerHTML = '<div class="empty-state"><p>❌ 加载失败，请刷新页面重试</p></div>'
+      }
+    }
+
+    init()
+
+    // 定期刷新（检测 IndexedDB 是否有更新）
+    setInterval(init, 2000)
+  </script>
+</body>
+</html>

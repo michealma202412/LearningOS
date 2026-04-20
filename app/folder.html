@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LearningOS - 文件夹详情</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 {
+      color: #333;
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .folder-date {
+      color: #999;
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .stat-item {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 28px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    button, a {
+      padding: 10px 20px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      text-decoration: none;
+      transition: all 0.3s;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #45a049;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #764ba2;
+      transform: translateY(-2px);
+    }
+
+    .btn-danger {
+      background: #f44336;
+      color: white;
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .btn-danger:hover {
+      background: #da190b;
+    }
+
+    .content {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 22px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+
+    .audio-item {
+      background: #f9f9f9;
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .audio-item audio {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .audio-info {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .audio-id {
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 5px;
+    }
+
+    .audio-time {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .audio-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #e0e0e0;
+      border-radius: 3px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4CAF50, #45a049);
+      border-radius: 3px;
+    }
+
+    .review-status {
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+    }
+
+    .nav {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid #f0f0f0;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #667eea;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📁 文件夹详情</h1>
+      <div class="folder-date" id="folderDate">加载中...</div>
+      
+      <div class="stats" id="stats"></div>
+
+      <div class="actions">
+        <a href="recorder.html" id="recordBtn" class="btn-primary">🎤 新增录音</a>
+        <a href="index.html" class="btn-secondary">← 返回看板</a>
+      </div>
+    </div>
+
+    <div class="content">
+      <h2>🎵 所有录音</h2>
+      <div id="audioList"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { getAudiosByFolder, getAllAudios, updateAudio, deleteAudio } from "./js/db.js"
+    import { getFolderDateString, calculateFolderStats, isToday } from "./js/scheduler.js"
+
+    let currentFolder = null
+
+    // 从 URL 参数获取日期
+    const urlParams = new URLSearchParams(window.location.search)
+    const dateParam = urlParams.get('date')
+    
+    if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+      currentFolder = dateParam
+    } else {
+      currentFolder = new Date().toISOString().slice(0, 10)
+    }
+
+    async function init() {
+      // 更新标题和导航
+      document.getElementById("folderDate").textContent = getFolderDateString(currentFolder)
+      document.getElementById("recordBtn").href = `recorder.html?folder=${currentFolder}`
+
+      // 获取数据
+      const allAudios = await getAllAudios()
+      const folderAudios = await getAudiosByFolder(currentFolder)
+      const stats = calculateFolderStats(allAudios, currentFolder)
+
+      // 显示统计
+      const statsDiv = document.getElementById("stats")
+      statsDiv.innerHTML = `
+        <div class="stat-item">
+          <div class="stat-number">${stats.totalRecordings}</div>
+          <div class="stat-label">总录音数</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">${stats.completedReviews}/${stats.totalReviews}</div>
+          <div class="stat-label">完成复习</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">${stats.completionRate}%</div>
+          <div class="stat-label">完成率</div>
+        </div>
+      `
+
+      // 显示音频列表
+      const listDiv = document.getElementById("audioList")
+      
+      if (folderAudios.length === 0) {
+        listDiv.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <p>该文件夹中没有录音</p>
+            <p style="font-size: 12px; color: #ccc; margin-top: 10px;">点击"新增录音"按钮添加内容</p>
+          </div>
+        `
+        return
+      }
+
+      listDiv.innerHTML = ""
+
+      folderAudios.forEach(audio => {
+        const reviewStats = audio.reviews.reduce((acc, r) => {
+          if (r.done) acc.completed++
+          acc.total++
+          return acc
+        }, { completed: 0, total: 0 })
+
+        const completionPercent = (reviewStats.completed / reviewStats.total) * 100
+
+        const audioDiv = document.createElement("div")
+        audioDiv.className = "audio-item"
+
+        const url = URL.createObjectURL(audio.blob)
+        const createdDate = new Date(audio.createdAt).toLocaleString('zh-CN')
+
+        audioDiv.innerHTML = `
+          <audio controls src="${url}" style="flex: 1; min-width: 200px;"></audio>
+          <div class="audio-info">
+            <div class="audio-id">ID: ${audio.id}</div>
+            <div class="audio-time">创建: ${createdDate}</div>
+            <div class="review-status">
+              <strong>复习进度</strong>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${completionPercent}%"></div>
+              </div>
+              <div style="font-size: 11px; color: #999; margin-top: 5px;">
+                ${reviewStats.completed} / ${reviewStats.total} 完成
+              </div>
+            </div>
+          </div>
+          <div class="audio-actions" id="actions_${audio.id}">
+          </div>
+        `
+
+        listDiv.appendChild(audioDiv)
+
+        // 添加操作按钮
+        const actionsDiv = audioDiv.querySelector(`#actions_${audio.id}`)
+
+        // 标记完成按钮（针对当天的未完成项）
+        const pendingReview = audio.reviews.find(r => !r.done && isToday(r.date))
+        if (pendingReview) {
+          const completeBtn = document.createElement("button")
+          completeBtn.className = "btn-primary"
+          completeBtn.textContent = "✓ 完成"
+          completeBtn.style.padding = "8px 12px"
+          completeBtn.style.fontSize = "12px"
+          completeBtn.onclick = async () => {
+            audio.reviews.forEach(r => {
+              if (!r.done && isToday(r.date)) r.done = true
+            })
+            await updateAudio(audio)
+            init() // 刷新页面
+          }
+          actionsDiv.appendChild(completeBtn)
+        }
+
+        // 删除按钮
+        const deleteBtn = document.createElement("button")
+        deleteBtn.className = "btn-danger"
+        deleteBtn.textContent = "🗑️ 删除"
+        deleteBtn.onclick = async () => {
+          if (confirm("确定要删除这条录音吗？此操作不可撤销。")) {
+            await deleteAudio(audio.id)
+            init() // 刷新页面
+          }
+        }
+        actionsDiv.appendChild(deleteBtn)
+      })
+    }
+
+    init()
+  </script>
+</body>
+</html>

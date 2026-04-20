@@ -1,635 +1,267 @@
+# LearningOS 开发计划
 
+## 📋 系统定位
 
-# 一、先纠正一个关键点（避免你走弯路）
-
-你现在不是在做“个人网站”，而是在做：
-
-👉 **“轻量学习操作系统（Learning OS）”**
-
-核心不是页面，而是这三件事：
-
-1. 内容结构（知识怎么组织）
-2. 访问方式（扫码/路径）
-3. 学习循环（记忆 + 复习）
+**LearningOS** 是一个**学习行为系统**（不仅是内容展示）
+- 核心价值：产生和记录学习行为
+- 采用本地优先策略（第一阶段无需云端）
+- 循序渐进的功能升级路线
 
 ---
 
-# 二、整体架构（你可以直接照着搭）
+## 🎯 总体架构
 
-## 1️⃣ 系统分层
+在现有 LearningOS 仓库基础上，新增 `app/` 子系统：
 
 ```
-[物理层]
-  练习本 / 电纸屏 / 二维码
-
-        ↓
-
-[访问层]
-  URL（网页）
-
-        ↓
-
-[内容层]
-  Markdown / 多媒体
-
-        ↓
-
-[系统层]
-  记忆系统 / Agent生成 / 数据记录（未来）
-```
-
----
-
-## 2️⃣ 技术选型（当前最优解）
-
-| 层   | 技术            |
-| --- | ------------- |
-| 前端  | VitePress     |
-| 托管  | GitHub Pages  |
-| CDN | Cloudflare    |
-| 音频  | Cloudflare R2 |
-
-👉 这套组合：**0成本 + 全球访问 + 可扩展**
-
----
-
-# 三、核心设计：URL = 学习入口（这是关键）
-
-你之前的“扫码系统”要成立，必须做到：
-
-👉 **一个二维码 = 一个学习单元**
-
----
-
-## URL设计（直接用这个，不要改）
-
-```
-/learn/{学科}/{主题}/{知识点}
-```
-
-### 示例
-
-```
-/learn/chinese/food-history/noodle
-/learn/math/addition/within-20
-/learn/bible/genesis/day1
-```
-
----
-
-👉 好处：
-
-* 可读（人能看懂）
-* 可生成二维码
-* 可扩展AI推荐路径
-
----
-
-# 四、内容结构（决定你未来上限）
-
-```
-/docs
-  /learn
-    /chinese
-      /food-history
-        noodle.md
-    /math
-      /addition
-        within-20.md
-```
-
----
-
-## 每个页面的标准结构（统一格式！）
-
-```markdown
-# 标题
-
-## 🎯 学习目标
-- 知道xxx
-- 理解xxx
-
-## 📖 内容
-（文字 + 图片）
-
-## 🔊 音频
-（播放按钮）
-
-## 🧠 记忆点
-- 关键1
-- 关键2
-
-## ❓ 小测试
-- 问题1
-- 问题2
-
-## 🔁 复习建议
-- 第1天
-- 第3天
-- 第7天
-```
-
----
-
-👉 这一点非常重要：
-你是在构建“可训练结构”，不是写文章。
-
----
-
-# 五、二维码系统（你前面方案的落地版）
-
-## 规则：二维码只做一件事
-
-👉 **跳转URL**
-
-例如：
-
-```
-https://yourdomain.com/learn/math/addition/within-20
-```
-
----
-
-## 生成工具
-
-用你已有的 Python 脚本（你之前已经在做）
-
-或者简单点：
-
-* 批量生成二维码
-* 打印贴到：
-
-  * 练习本
-  * 卡片
-  * 电纸屏
-
----
-
-# 六、记忆系统（你项目的核心价值）
-
-你不是在做“内容展示”，而是：
-
-👉 **艾宾浩斯训练系统**
-
----
-
-## 最简单实现（先别搞复杂）
-
-直接写死在页面：
-
-```
-第1天：学习
-第3天：复习
-第7天：复习
-```
-
----
-
-## 进阶（未来）
-
-你可以接：
-
-* Anki
-* 或自己做轻量系统
-
----
-
-# 七、Agent系统（你真正的壁垒）
-
-你之前提的 Multi-Agent，这里给你一个现实落地版：
-
----
-
-## Agent分工（最小版本）
-
-### 1️⃣ 内容生成Agent
-
-👉 生成：
-
-* 解释
-* 图片建议
-* 例子
-
----
-
-### 2️⃣ 出题Agent
-
-👉 自动生成：
-
-* 小测试
-* 选择题
-
----
-
-### 3️⃣ 复习Agent
-
-👉 生成：
-
-* 复习计划
-* 记忆强化内容
-
----
-
-👉 这些都可以用 GPT API 做，不需要复杂框架
-
----
-
-# 八、你的MVP（我帮你压到最小）
-
-你只做这4件事：
-
-### ✅ 第1步
-
-搭 VitePress 网站
-
-### ✅ 第2步
-
-做 10 个学习页面（比如食物历史）
-
-### ✅ 第3步
-
-每个页面生成二维码
-
-### ✅ 第4步
-
-孩子扫码使用
-
----
-
-👉 到这里你已经超过90%的人了
-
----
-
-# 九、下一阶段（不要现在做）
-
-等你跑通后再加：
-
-* 用户系统
-* 学习记录
-* AI推荐路径
-* 电纸屏联动
-
----
-
-# 十、我直接给你一个判断
-
-你这个项目真正的成功关键不是技术，而是：
-
-👉 **内容 + 使用场景（孩子是否愿意用）**
-
----
-
-# 如果你要继续，我可以帮你下一步
-
-我可以直接给你：
-
-1️⃣ 一套 VitePress 教育模板（直接可用）
-2️⃣ 自动生成 Markdown + QR 的脚本
-3️⃣ Agent 生成内容的 pipeline
-4️⃣ 和你“九宫格识别系统”打通的完整架构
-
-你只需要说一句：
-👉 **“给我模板 + 自动化脚本”**
-
-
-好，这一步我直接给你**能跑的最小系统（模板 + 自动化脚本）**，你照着做，**1天内可以上线第一个可用版本**。
-
-我不会给你“演示级代码”，而是**你这个教育系统可以长期用的骨架**。
-
----
-
-# 一、整体结构（直接照这个建）
-
-```bash
-learning-os/
-├── docs/                  # VitePress内容
-│   ├── learn/
-│   │   ├── chinese/
-│   │   │   └── food-history/
-│   │   │       └── noodle.md
-│   │   └── math/
-│   │       └── addition/
-│   │           └── within-20.md
-│   ├── public/
-│   │   ├── qrcodes/       # 自动生成二维码
-│   │   └── audio/
-│   └── .vitepress/
-│       └── config.ts
+LearningOS/
+├── docs/                    # 原有内容系统（保持不动）
 │
-├── scripts/
-│   ├── generate_qr.py
-│   ├── generate_content.py
+├── app/                     # 👈 新增：学习应用核心
+│   ├── index.html           # 看板页（今日复习）
+│   ├── recorder.html        # 录音页
+│   ├── folder.html          # 文件夹页（阶段2）
+│   └── js/
+│       ├── db.js            # IndexedDB 数据操作
+│       ├── recorder.js      # 浏览器录音 API
+│       ├── scheduler.js     # 艾宾浩斯复习调度
+│       ├── folder.js        # 文件夹逻辑
+│       └── app.js           # UI 渲染和交互
 │
-└── package.json
+└── public/
+    └── qrcodes/             # 全局
 ```
 
 ---
 
-# 二、VitePress模板（核心配置）
+## 🚀 分阶段开发计划
 
-## 1️⃣ 安装
+### **第一阶段：最小可行版本（MVP）**
 
-```bash
-npm init -y
-npm install vitepress
-```
+目标：建立"录音 → 存储 → 复习"的完整闭环
 
----
+#### 阶段1.1：项目初始化
+- [ ] 在 `/app` 目录下创建基础文件结构
+- [ ] 创建 HTML 页面骨架（index.html, recorder.html）
+- [ ] 初始化 JavaScript 模块文件
 
-## 2️⃣ config.ts
+#### 阶段1.2：核心模块开发
 
-```ts
-export default {
-  title: "Learning OS",
-  description: "扫码学习系统",
+**1. 数据库模块（db.js）**
+- [ ] 使用 IndexedDB 存储音频数据
+- 功能：
+  - `openDB()` - 初始化数据库
+  - `saveAudio(audio)` - 保存新录音
+  - `getAllAudios()` - 获取所有录音
+  - `updateAudio(audio)` - 更新音频信息（如标记完成）
 
-  themeConfig: {
-    nav: [
-      { text: "语文", link: "/learn/chinese/" },
-      { text: "数学", link: "/learn/math/" }
-    ],
+**2. 录音模块（recorder.js）**
+- [ ] 调用浏览器 MediaRecorder API
+- 功能：
+  - `recordAudio(onStop)` - 开始录音并返回 Blob
+  - 支持开始/停止录音
 
-    sidebar: {
-      "/learn/chinese/": [
-        {
-          text: "食物历史",
-          items: [
-            { text: "面条", link: "/learn/chinese/food-history/noodle" }
-          ]
-        }
-      ]
-    }
-  }
-}
-```
+**3. 调度模块（scheduler.js）**
+- [ ] 实现艾宾浩斯复习算法
+- 设定间隔：[0, 1, 3, 7] 天
+- 功能：
+  - `createReviews(ts)` - 为新录音生成复习计划
+  - `isToday(ts)` - 判断是否为今天
 
----
+**4. 应用逻辑模块（app.js）**
+- [ ] 实现看板数据处理和 UI 渲染
+- 功能：
+  - `renderTodayList()` - 获取并展示今日待复习的音频
+  - 支持音频播放和完成标记
 
-# 三、标准学习页面模板（最重要）
+#### 阶段1.3：前端页面建设
 
-👉 保存为：
-`docs/learn/chinese/food-history/noodle.md`
+**recorder.html（录音页）**
+- [ ] 开始录音按钮
+- [ ] 停止录音按钮
+- [ ] 实时录音状态反馈
+- [ ] 保存成功提示
 
-```markdown
-# 面条的历史
+**index.html（看板页）**
+- [ ] 显示今日要复习的音频列表
+- [ ] 音频播放器（HTML5 audio）
+- [ ] 标记完成按钮
+- [ ] 导航链接到录音页
 
-## 🎯 学习目标
-- 知道面条的起源
-- 了解中国饮食发展
+#### 阶段1.4：功能验证
+- [ ] 录音功能测试（能否正常录制音频）
+- [ ] 本地存储测试（IndexedDB 数据是否持久化）
+- [ ] 复习调度测试（是否正确生成复习日期）
+- [ ] UI 交互测试（按钮、播放器功能）
 
-## 📖 内容
-面条起源于中国，已有4000多年历史。
-
-![图片](/images/noodle.jpg)
-
-## 🔊 音频
-<audio controls src="/audio/noodle.mp3"></audio>
-
-## 🧠 记忆点
-- 中国最早
-- 4000年历史
-
-## ❓ 小测试
-1. 面条起源于哪个国家？
-2. 大约多少年前？
-
-## 🔁 复习建议
-- 第1天：学习
-- 第3天：复习
-- 第7天：复习
-```
+**交付成果：**
+- 可在 `/app/` 访问的完整学习应用
+- 支持录音、存储、复习三大核心功能
+- 所有数据本地化（浏览器 IndexedDB）
 
 ---
 
-# 四、自动化脚本（重点来了）
+### **第二阶段：文件夹系统（Folder System）**
 
-## 1️⃣ 批量生成二维码（核心）
+目标：按日期组织录音，支持多日期管理和 URL 参数绑定
 
-`scripts/generate_qr.py`
+#### 阶段2.1：数据结构升级
+- [ ] 在 audio 数据模型中添加 `folder` 字段（YYYY-MM-DD 格式）
+- [ ] 创建 folder.js 模块
+- 功能：
+  - `getTodayFolder()` - 获取今日日期文件夹
+  - `parseFolder(url)` - 从 URL 参数提取文件夹
 
-```python
-import qrcode
-import os
+#### 阶段2.2：文件夹逻辑
+- [ ] 改造 recorder.html，自动绑定当前日期
+- [ ] 支持 URL 参数：`?folder=YYYY-MM-DD`
+- [ ] 实现文件夹自动创建（基于首次录音日期）
 
-BASE_URL = "https://yourdomain.com"
+#### 阶段2.3：看板分组展示
+- [ ] 修改 app.js，按 folder 分组显示音频
+- [ ] 看板展示结构：
+  ```
+  📁 2026-04-20
+    - 音频1 [完成]
+    - 音频2
+  
+  📁 2026-04-19
+    - 音频3
+  ```
+- [ ] 支持不同日期间的复习切换
 
-PAGES = [
-    "/learn/chinese/food-history/noodle",
-    "/learn/math/addition/within-20"
-]
+#### 阶段2.4：文件夹页面（可选）
+- [ ] 创建 folder.html，显示指定日期的所有录音
+- [ ] URL 参数：`/app/folder.html?date=YYYY-MM-DD`
+- [ ] 功能：查看、播放、删除该日期的录音
 
-OUTPUT_DIR = "../docs/public/qrcodes"
+#### 阶段2.5：与二维码系统集成
+- [ ] 支持生成形如 `/app/recorder.html?folder=2026-04-20` 的二维码
+- [ ] 二维码可直接跳转到指定日期的录音页面
+- [ ] 支持在物理学习本上贴二维码
 
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-for page in PAGES:
-    url = BASE_URL + page
-    filename = page.replace("/", "_") + ".png"
-
-    img = qrcode.make(url)
-    img.save(os.path.join(OUTPUT_DIR, filename))
-
-    print(f"Generated QR: {url}")
-```
-
----
-
-## 2️⃣ 自动生成内容（接AI用）
-
-`scripts/generate_content.py`
-
-```python
-import os
-
-TEMPLATE = """# {title}
-
-## 🎯 学习目标
-- 理解{title}
-- 掌握基础概念
-
-## 📖 内容
-{content}
-
-## 🧠 记忆点
-- 核心1
-- 核心2
-
-## ❓ 小测试
-1. 什么是{title}？
-
-## 🔁 复习建议
-- 第1天
-- 第3天
-- 第7天
-"""
-
-def create_page(path, title):
-    content = TEMPLATE.format(
-        title=title,
-        content="这里由AI生成内容"
-    )
-
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(content)
-
-# 示例
-create_page(
-    "../docs/learn/math/addition/within-20.md",
-    "20以内加法"
-)
-```
+**交付成果：**
+- 文件夹系统完全可用
+- URL 参数化支持
+- 与二维码系统打通
 
 ---
 
-# 五、本地运行
+### **第三阶段：学习统计（Learning Analytics）**
 
-```bash
-npx vitepress dev docs
-```
+目标：建立学习数据分析和反馈机制
 
-打开：
+#### 阶段3.1：统计数据收集
+- [ ] 记录关键指标：
+  - 每天录音数量
+  - 每天完成复习数量
+  - 连续打卡天数
+  - 总学习时长
 
-```
-http://localhost:5173
-```
+#### 阶段3.2：看板统计展示
+- [ ] 添加统计面板到 index.html
+- 显示内容：
+  - 📊 今日复习进度（完成情况）
+  - 🔥 连续打卡天数
+  - 📈 周学习数据
 
----
+#### 阶段3.3：学习报告
+- [ ] 创建 stats.html 页面
+- 展示内容：
+  - 周/月学习统计
+  - 复习完成率
+  - 学习趋势图表
 
-# 六、上线（最简单）
+#### 阶段3.4：数据导出
+- [ ] 支持导出学习数据（JSON/CSV）
+- [ ] 支持备份与恢复
 
-### 用 GitHub Pages
-
-如果你还没有 Git 仓库：
-
-```bash
-git init
-git add .
-git commit -m "init"
-git branch -M main
-git remote add origin https://github.com/<你的用户名>/<仓库名>.git
-```
-
-先把项目部署配置好：
-
-```bash
-npm install
-npm run build
-```
-
-如果你使用的是 VitePress，构建输出通常在 `docs/.vitepress/dist`；如果是标准 Vite React 项目，输出在 `dist/`。
-
-最简单的部署方式是使用 `gh-pages`：
-
-```bash
-npm install --save-dev gh-pages
-```
-
-然后在 `package.json` 里增加脚本：
-
-```json
-"scripts": {
-  "build": "vite build",
-  "deploy": "gh-pages -d dist"
-}
-```
-
-发布网站：
-
-```bash
-npm run build
-npm run deploy
-```
-
-或者你也可以直接在 GitHub 上开启 Pages：
-
-1. 推送代码到 `main` 分支：
-   ```bash
-git push -u origin main
-```
-2. 打开 GitHub 仓库设置 -> Pages。
-3. 选择发布来源为 `gh-pages` 分支，或者如果你使用 `docs/` 文件夹构建，选择 `main` 分支下的 `docs` 目录。
-4. 保存后等待几分钟，GitHub 会生成访问链接。
-
-如果你想把页面挂到自定义域，还可以在仓库根目录添加 `CNAME` 文件，内容为你的域名。
+**交付成果：**
+- 完整的学习数据看板
+- 学习进度可视化
+- 数据备份能力
 
 ---
 
-### 加速（关键）
+### **进阶计划（产品化路线）**
 
-接入 Cloudflare 能让你的教育网站更稳定、访问更快：
+#### Phase 4：云同步与多设备
+- 升级存储：Cloudflare R2（音频文件） + Supabase（数据表）
+- 用户账号系统
+- 多设备同步
 
-* 将域名 DNS 托管到 Cloudflare
-* 配置 Cloudflare 的代理（橙云）
-* 启用 CDN 缓存静态资源
-* 启用 TLS/HTTPS，确保扫码访问安全
+#### Phase 5：AI 能力集成
+- 自动生成朗读内容
+- AI 生成听写题
+- 智能复习推荐（算法优化）
 
-如果你使用 GitHub Pages 和自有域名：
-
-1. 在 GitHub Pages 设置中填写你的自定义域名。
-2. 在 Cloudflare DNS 中添加对应的 `CNAME` 或 `A` 记录。
-3. 启用 Cloudflare 自动 HTTPS 重写。
-
----
-
----
-
-# 七、你现在已经具备的能力（很关键）
-
-你现在这个系统已经可以：
-
-✅ 扫码 → 打开学习页面
-✅ 支持文字 / 图片 / 音频
-✅ 可批量生成内容
-✅ 可扩展AI
+#### Phase 6：社交与协作
+- 家庭共享功能
+- 教师监控面板
+- 学习分享功能
 
 ---
 
-# 八、我帮你再往前推一步（差距就在这里）
+## 📊 关键指标与验证
 
-你接下来不要盲目加功能，先做这3件事：
+### 第一阶段验证点
+- ✅ 能否正常录音和停止？
+- ✅ 音频是否持久化存储？
+- ✅ 复习日期是否正确计算？
+- ✅ 看板是否正确显示待复习项目？
 
----
+### 第二阶段验证点
+- ✅ 文件夹是否正确分组？
+- ✅ URL 参数是否生效？
+- ✅ 二维码跳转是否正常？
 
-## 1️⃣ 做一个真实使用场景
-
-比如：
-
-* 打印10个二维码
-* 贴在孩子练习本上
-* 观察使用情况
-
----
-
-## 2️⃣ 优化“学习体验”
-
-比技术重要10倍：
-
-* 页面是否简洁
-* 是否有趣
-* 是否愿意反复扫
+### 产品化验证点（最重要）
+- 👶 孩子是否每天点"今日复习"？
+- 📊 学习数据是否真实反映使用情况？
+- 🎯 系统是否有效增强学习效果？
 
 ---
 
-## 3️⃣ 收集反馈（关键）
+## 🛠️ 技术栈
 
-你要回答：
-👉 孩子愿不愿意用？
-
----
-
-# 九、下一步（我可以继续帮你）
-
-等你跑起来后，我可以帮你升级：
-
-👉 扫码 → 自动记录学习行为
-👉 自动生成“复习提醒”
-👉 接入你之前的“九宫格识别系统”
-👉 Multi-Agent 自动出题 + 个性化路径
+| 层级 | 技术 | 说明 |
+|------|------|------|
+| **前端框架** | HTML5 + Vanilla JS | 轻量简单，无构建依赖 |
+| **存储** | IndexedDB | 浏览器原生存储，支持大数据量 |
+| **录音** | MediaRecorder API | W3C 标准，浏览器原生支持 |
+| **算法** | Anki 风格复习 | 固定间隔 [0,1,3,7] 天 |
+| **部署** | GitHub Pages | 与现有仓库无缝集成 |
 
 ---
 
-你现在别再设计了，直接动手。
+## 📅 开发时间估算
 
-如果你卡在某一步（比如部署 / QR / 页面结构），把错误贴出来，我帮你一步步修。
+| 阶段 | 范围 | 预计工时 |
+|------|------|---------|
+| 第一阶段 | MVP（录音+看板） | 6-8 小时 |
+| 第二阶段 | 文件夹系统 | 4-6 小时 |
+| 第三阶段 | 统计分析 | 6-8 小时 |
+| **小计** | **完整应用** | **16-22 小时** |
+
+---
+
+## 🎬 快速开始检查清单
+
+第一阶段启动时确认：
+- [ ] 已创建 `/app` 目录
+- [ ] 已创建基础 HTML 文件（index.html, recorder.html）
+- [ ] 已创建 `/app/js/` 目录
+- [ ] 已初始化空的 JS 模块文件
+
+---
+
+## 🔗 相关资源
+
+- [IndexedDB 文档](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API)
+- [MediaRecorder API](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder)
+- [艾宾浩斯遗忘曲线](https://en.wikipedia.org/wiki/Forgetting_curve)
+- [Anki 复习算法](https://docs.ankiweb.net/intro.html)
+
+---
+
+**下一步行动：** 按照第一阶段的计划，逐个实现和验证各个功能模块。
