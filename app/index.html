@@ -248,21 +248,31 @@
 
         // 更新统计数据
         const audios = await getAllAudios()
-        const todayAudios = audios.filter(a =>
-          a.reviews.some(r => !r.done && isToday(r.date))
-        )
+        // 修改这部分代码以正确统计包含文章在内的所有今日项目
+        const todayItems = audios.filter(item => {
+          // 对于音频项目，检查是否有待完成的复习
+          if (item.type === "audio") {
+            // 确保音频有reviews属性
+            if (!item.reviews || !Array.isArray(item.reviews)) {
+              return false;
+            }
+            return item.reviews.some(r => !r.done && isToday(r.date));
+          }
+          // 对于文章项目，总是算作今日项目
+          return item.type === "article";
+        });
 
-        const folders = new Set(todayAudios.map(a => a.folder))
+        const folders = new Set(todayItems.map(item => item.folder));
 
-        document.getElementById("totalCount").textContent = todayAudios.length
-        document.getElementById("totalFolders").textContent = folders.size
+        document.getElementById("totalCount").textContent = todayItems.length;
+        document.getElementById("totalFolders").textContent = folders.size;
 
-        if (todayAudios.length === 0) {
+        if (todayItems.length === 0) {
           listContainer.innerHTML = `
             <div class="empty-state">
               <div class="empty-state-icon">🎉</div>
               <div class="empty-state-text">太棒了！今天没有待复习的项目</div>
-              <p style="color: #ccc; font-size: 14px;">去 <a href="recorder.html" style="color: #667eea; text-decoration: underline;">录音页面</a> 添加新内容吧</p>
+              <p style="color: #ccc; font-size: 14px;">去 <a href="recorder.html" style="color: #667eea; text-decoration: underline;">录音页面</a> 或 <a href="editor.html" style="color: #667eea; text-decoration: underline;">写文章</a> 添加新内容吧</p>
             </div>
           `
         }

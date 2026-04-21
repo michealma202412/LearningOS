@@ -7,7 +7,10 @@ export function openDB() {
 
     req.onupgradeneeded = () => {
       const db = req.result
-      db.createObjectStore(STORE, { keyPath: "id" })
+      // Check if object store already exists to prevent errors
+      if (!db.objectStoreNames.contains(STORE)) {
+        db.createObjectStore(STORE, { keyPath: "id" })
+      }
     }
 
     req.onsuccess = () => resolve(req.result)
@@ -25,6 +28,16 @@ export async function saveAudio(audio) {
   })
 }
 
+// New function to save articles
+export async function saveArticle(article) {
+  // Ensure the article has the correct type
+  const articleWithTypeInfo = {
+    ...article,
+    type: "article"
+  }
+  return saveAudio(articleWithTypeInfo)
+}
+
 export async function getAllAudios() {
   const db = await openDB()
   const tx = db.transaction(STORE, "readonly")
@@ -37,9 +50,21 @@ export async function getAllAudios() {
   })
 }
 
+// New function to get all articles
+export async function getAllArticles() {
+  const allItems = await getAllAudios()
+  return allItems.filter(item => item.type === "article")
+}
+
+// New function to get articles by folder
+export async function getArticlesByFolder(folder) {
+  const allItems = await getAllAudios()
+  return allItems.filter(item => item.type === "article" && item.folder === folder)
+}
+
 export async function getAudiosByFolder(folder) {
   const allAudios = await getAllAudios()
-  return allAudios.filter(a => a.folder === folder)
+  return allAudios.filter(a => a.folder === folder && a.type !== "article")
 }
 
 export async function updateAudio(audio) {
@@ -61,4 +86,3 @@ export async function getAllFolders() {
   const folders = new Set(allAudios.map(a => a.folder))
   return Array.from(folders).sort().reverse()
 }
-

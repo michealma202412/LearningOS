@@ -1,1208 +1,873 @@
-你这一步方向是对的，而且比“先堆内容”更关键——你是在做**学习行为系统**，不是内容站。
+# 在我当前的LearningOS基础上，除了录音，1.增加语音输入转文字的功能，方便直接通过语音输入来写文章，2. 文章与录音的音频在同一个文件夹下，3.文章具备发布到learningOS 下的网页中（类似已有的面条的历史这样的文章）
 
-但我要先直说一个现实判断：
+# part 1
+这一步你提的三个功能，其实已经把你的系统从“学习工具”推进到了：
 
-👉 **你这个需求已经从“静态网站”跨到“应用系统”了**
-（涉及录音、状态、调度、复习算法）
+👉 **内容生产 + 学习闭环 + 发布系统（接近产品原型）**
 
-所以方案不能再用纯 VitePress 那一套了。
-
----
-
-# 一、可行性结论（先给你定心）
-
-✔ 完全可行
-✔ 可以做成“极简版本 1~2 天跑起来”
-✔ 不需要重后端（前期）
-
-但有个前提：
-
-👉 **先做“单用户本地优先版本”**
-不要一上来搞账号系统、云同步
+但我先帮你压一下复杂度，不然你会一下子做爆：
 
 ---
 
-# 二、你要的功能，本质拆解
+# 一、关键判断（先讲清楚）
 
-你说的3点，其实是一个最小学习闭环：
+你这三个需求里，**最难的不是录音，而是“发布文章”**：
+
+| 功能       | 难度   | 关键问题             |
+| -------- | ---- | ---------------- |
+| 语音转文字    | ⭐⭐   | 浏览器兼容性           |
+| 文件夹统一管理  | ⭐⭐   | 数据结构             |
+| 发布到 docs | ⭐⭐⭐⭐ | GitHub Pages是静态的 |
+
+👉 所以我们要分层设计，而不是硬塞。
 
 ---
 
-## 1️⃣ 创建“学习单元”（文件夹）
+# 二、正确架构（你必须这样拆）
 
-👉 本质：一个 Session
+在你现有 LearningOS 上：
 
-```json
+```bash
+LearningOS/
+├── docs/              # 已有（静态内容）
+├── app/               # 👈 行为系统（你刚做的）
+│   ├── recorder.html
+│   ├── editor.html    # 👈 新增（语音写文章）
+│   ├── js/
+```
+
+---
+
+👉 核心原则：
+
+| 模块   | 作用       |
+| ---- | -------- |
+| app  | 写内容（动态）  |
+| docs | 发布内容（静态） |
+
+---
+
+# 三、功能1：语音转文字（直接可用方案）
+
+👉 不要自己搞模型，直接用浏览器：
+
+## 新建：`editor.html`
+
+```html
+<h2>语音写文章</h2>
+
+<button id="start">开始语音输入</button>
+<button id="stop">停止</button>
+
+<textarea id="text" rows="10" cols="50"></textarea>
+
+<script>
+const SpeechRecognition =
+  window.SpeechRecognition || window.webkitSpeechRecognition
+
+const recog = new SpeechRecognition()
+recog.lang = "zh-CN"
+recog.continuous = true
+
+recog.onresult = (event) => {
+  let result = ""
+  for (let i = event.resultIndex; i < event.results.length; i++) {
+    result += event.results[i][0].transcript
+  }
+
+  document.getElementById("text").value += result
+}
+
+document.getElementById("start").onclick = () => recog.start()
+document.getElementById("stop").onclick = () => recog.stop()
+</script>
+```
+
+---
+
+👉 现实提醒（别踩坑）：
+
+* ❌ iOS Safari 支持很差
+* ✔ Chrome 最稳
+* ✔ 可以后面换 Whisper API（再说）
+
+---
+
+# 四、功能2：文章 + 音频同文件夹
+
+👉 我们统一数据结构：
+
+---
+
+## 新结构（非常关键）
+
+```js
 {
-  "date": "2026-04-20",
-  "audios": []
-}
-```
+  id: "2026-04-20",
+  type: "folder",
 
----
+  audios: [...],
 
-## 2️⃣ 录音
-
-👉 本质：浏览器录音 + 存储
-
----
-
-## 3️⃣ 艾宾浩斯看板
-
-👉 本质：时间调度系统（核心）
-
----
-
-# 三、技术实现（最小可行架构）
-
-我给你一个**不走弯路版本**：
-
----
-
-## 方案：纯前端 + 本地存储（第一阶段）
-
-### 技术栈
-
-* 前端：Next.js（建议）或原生 JS
-* 存储：浏览器 IndexedDB（关键）
-* 录音：MediaRecorder API
-
----
-
-## 为什么这样选？
-
-你要的功能：
-
-| 功能    | 静态网站能否实现 |
-| ----- | -------- |
-| 创建文件夹 | ❌        |
-| 录音    | ❌        |
-| 复习调度  | ❌        |
-
-👉 所以必须“前端应用化”
-
----
-
-# 四、核心模块设计（直接给你结构）
-
-```id="arch1"
-[UI层]
-  ├── 创建文件夹按钮
-  ├── 录音按钮
-  ├── 看板页
-
-[逻辑层]
-  ├── FolderManager
-  ├── AudioRecorder
-  ├── ReviewScheduler（核心）
-
-[存储层]
-  └── IndexedDB
-```
-
----
-
-# 五、关键实现（我帮你拆到代码级思路）
-
----
-
-## 1️⃣ 创建“当天文件夹”
-
-```js
-const today = new Date().toISOString().slice(0, 10)
-
-const folder = {
-  id: today,
-  createdAt: Date.now(),
-  audios: []
-}
-```
-
-👉 存入 IndexedDB
-
----
-
-## 2️⃣ 录音（浏览器原生）
-
-核心API：
-
-```js
-navigator.mediaDevices.getUserMedia({ audio: true })
-```
-
-录音逻辑：
-
-```js
-const recorder = new MediaRecorder(stream)
-recorder.start()
-
-recorder.ondataavailable = (e) => {
-  const audioBlob = e.data
-}
-```
-
-👉 存储：
-
-* Blob 存 IndexedDB
-* 或转 URL
-
----
-
-## 3️⃣ 艾宾浩斯算法（核心）
-
-你不用复杂版，先用这个：
-
-```js
-const intervals = [0, 1, 3, 7] // 天
-
-function generateReviewDates(createdAt) {
-  return intervals.map(day => {
-    return createdAt + day * 24 * 60 * 60 * 1000
-  })
-}
-```
-
----
-
-## 每个音频结构：
-
-```json
-{
-  "id": "audio1",
-  "createdAt": 1713571200000,
-  "reviews": [
-    { "date": 1713571200000, "done": false },
-    { "date": 1713657600000, "done": false },
-    { "date": 1713916800000, "done": false }
+  articles: [
+    {
+      id: "a1",
+      content: "文章内容",
+      createdAt: 123456
+    }
   ]
 }
 ```
 
 ---
 
-## 4️⃣ 看板页逻辑
+👉 但为了不推翻你现有代码：
+
+我们用**轻量方案**：
+
+---
+
+## 方案（推荐）
+
+在 audio 结构上扩展：
 
 ```js
-function getTodayReviews(audios) {
-  const today = Date.now()
+{
+  id,
+  blob,
+  folder: "2026-04-20",
+  type: "audio"
+}
+```
 
-  return audios.filter(audio =>
-    audio.reviews.some(r =>
-      !r.done && isSameDay(r.date, today)
-    )
-  )
+文章：
+
+```js
+{
+  id,
+  content,
+  folder: "2026-04-20",
+  type: "article"
 }
 ```
 
 ---
 
-# 六、UI最小版本（你不要设计复杂）
+👉 好处：
+
+* 不改DB结构
+* 同一表存
+* 易扩展
 
 ---
 
-## 页面1：首页
+# 五、保存文章（接入DB）
 
-* 创建今日文件夹按钮
-* 文件夹列表
+👉 新建函数：
 
----
-
-## 页面2：文件夹页
-
-* 🎤 录音按钮
-* 音频列表
-
----
-
-## 页面3：复习看板（核心）
-
-* 今日要复习音频
-* 播放 + 标记完成
-
----
-
-# 七、你最容易踩的坑（我提前帮你挡）
-
----
-
-## ❌ 坑1：一开始就上云
-
-👉 结果：复杂度爆炸
-
-✔ 正确：
-先本地（IndexedDB）
-
----
-
-## ❌ 坑2：做复杂UI
-
-👉 结果：做不完
-
-✔ 正确：
-按钮 + 列表就够
-
----
-
-## ❌ 坑3：做复杂算法
-
-👉 结果：调不通
-
-✔ 正确：
-固定间隔（0,1,3,7）
-
----
-
-# 八、进阶路线（你后面一定会走）
-
-当你跑通后：
-
----
-
-## 第一步升级：云同步
-
-* 存储 → Cloudflare R2
-* 数据 → Supabase
-
----
-
-## 第二步：扫码打通
-
-👉 你的大系统就连起来了：
-
-* 扫码 → 打开页面
-* 页面 → 播放音频 / 记录学习
-
----
-
-## 第三步：Agent接入
-
-* 自动生成朗读内容
-* 自动出听写题
-
----
-
-# 九、我给你的行动建议（很重要）
-
-你现在不要写一堆代码。
-
-👉 先做这个最小版本：
-
----
-
-### Day 1目标
-
-1. 做一个网页
-2. 能点击“开始录音”
-3. 能保存音频
-4. 能显示“今天要复习的音频”
-
----
-
-👉 就这4步
-
----
-
-# 十、我可以直接帮你下一步
-
-如果你要，我可以：
-
-✅ 给你一套完整 React / Next.js 最小代码（可直接运行）
-✅ 帮你把“录音 + IndexedDB + 看板”写成一个Demo
-✅ 或者帮你把它接进你之前的二维码系统
-
-你只需要说一句：
-
-👉 **“给我最小可运行Demo代码”**
-
-# part 2
-很好，这一步你开始进入**真正有价值的系统整合阶段**了。
-
-但我先给你一个关键判断（不说这个你后面一定踩坑）：
-
-👉 **你不能把“录音 + 复习系统”硬塞进现有 VitePress 结构里**
-否则会变成一坨难维护的混合物。
-
-正确做法是：
-
-👉 **在 LearningOS 里“加一个 App 子系统”，而不是改原有文档系统**
-
----
-
-# 一、目标架构（在你现有仓库上“加层”）
-
-你当前仓库本质是：
-
-👉 内容系统（docs）
-
-现在要变成：
-
-```bash
-LearningOS/
-├── docs/                 # 原来的内容系统（保持不动）
-│
-├── app/                  # 👈 新增：学习应用（核心）
-│   ├── index.html        # 看板页
-│   ├── recorder.html     # 录音页
-│   ├── js/
-│   │   ├── db.js
-│   │   ├── recorder.js
-│   │   ├── scheduler.js
-│   │   └── app.js
-│
-├── public/
-│   └── qrcodes/
-```
-
----
-
-👉 这一步非常关键：
-
-| 模块   | 作用            |
-| ---- | ------------- |
-| docs | 展示知识          |
-| app  | 产生学习行为（你现在做的） |
-
----
-
-# 二、访问路径设计（和你二维码系统打通）
-
-以后你的URL会变成：
-
-```bash
-https://yourdomain.com/app/
-https://yourdomain.com/app/recorder.html
-```
-
-👉 二维码可以直接跳：
-
-```bash
-/app/recorder.html?folder=2026-04-20
-```
-
----
-
-# 三、核心模块（我帮你直接嵌进去）
-
----
-
-## 1️⃣ IndexedDB（db.js）
+📄 db.js 增加：
 
 ```js
-const DB_NAME = "learning_os"
-const STORE = "audios"
-
-export async function initDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1)
-
-    req.onupgradeneeded = (e) => {
-      const db = e.target.result
-      db.createObjectStore(STORE, { keyPath: "id" })
-    }
-
-    req.onsuccess = () => resolve(req.result)
-    req.onerror = reject
-  })
+export async function saveArticle(article) {
+  return saveAudio(article)  // 复用
 }
 ```
 
 ---
 
-## 2️⃣ 录音模块（recorder.js）
+## editor.html 增加保存按钮：
 
-```js
-export async function startRecording(onData) {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-  const recorder = new MediaRecorder(stream)
+```html
+<button id="save">保存文章</button>
 
-  recorder.start()
+<script type="module">
+import { saveArticle } from "./js/db.js"
+import { getTodayFolder } from "./js/folder.js"
 
-  recorder.ondataavailable = (e) => {
-    onData(e.data)
+document.getElementById("save").onclick = async () => {
+  const content = document.getElementById("text").value
+
+  const article = {
+    id: Date.now().toString(),
+    type: "article",
+    content,
+    folder: getTodayFolder(),
+    createdAt: Date.now()
   }
 
-  return recorder
-}
-```
+  await saveArticle(article)
 
----
-
-## 3️⃣ 艾宾浩斯调度（scheduler.js）
-
-```js
-const intervals = [0, 1, 3, 7]
-
-export function createReviewPlan(createdAt) {
-  return intervals.map(day => ({
-    date: createdAt + day * 86400000,
-    done: false
-  }))
-}
-
-export function isToday(ts) {
-  const d = new Date(ts)
-  const t = new Date()
-
-  return d.toDateString() === t.toDateString()
-}
-```
-
----
-
-## 4️⃣ 看板逻辑（app.js）
-
-```js
-import { isToday } from "./scheduler.js"
-
-export function getTodayList(audios) {
-  return audios.filter(a =>
-    a.reviews.some(r => !r.done && isToday(r.date))
-  )
-}
-```
-
----
-
-# 四、页面（直接能用）
-
----
-
-## recorder.html（录音页）
-
-```html
-<button id="record">开始录音</button>
-<ul id="list"></ul>
-
-<script type="module">
-import { startRecording } from "./js/recorder.js"
-import { createReviewPlan } from "./js/scheduler.js"
-
-let recorder
-
-document.getElementById("record").onclick = async () => {
-  recorder = await startRecording(async (blob) => {
-    const audio = {
-      id: Date.now().toString(),
-      blob,
-      createdAt: Date.now(),
-      reviews: createReviewPlan(Date.now())
-    }
-
-    console.log("saved", audio)
-  })
+  alert("文章已保存")
 }
 </script>
 ```
 
 ---
 
-## index.html（看板）
+# 六、看板支持“文章 + 音频”
 
-```html
-<h1>今日复习</h1>
-<ul id="reviewList"></ul>
+👉 修改 app.js：
 
-<script type="module">
-import { getTodayList } from "./js/app.js"
+```js
+if (item.type === "audio") {
+  // 原来的音频逻辑
+}
 
-const audios = [] // TODO: 从DB读取
-
-const list = getTodayList(audios)
-
-document.getElementById("reviewList").innerHTML =
-  list.map(a => `<li>${a.id}</li>`).join("")
-</script>
+if (item.type === "article") {
+  const div = document.createElement("div")
+  div.innerHTML = `
+    <p>${item.content.slice(0, 50)}...</p>
+  `
+  section.appendChild(div)
+}
 ```
 
 ---
 
-# 五、如何接入你现有 GitHub Pages
+# 七、最难点：发布到 docs（重点）
 
-你现在用的是：
+我直接说实话：
 
-👉 GitHub Pages
+👉 **浏览器不能直接写 GitHub 仓库**
 
-它支持：
-
-✔ 静态HTML
-✔ JS
-✔ IndexedDB
+所以你有3种选择：
 
 ---
 
-## 所以部署方式很简单：
+## ✅ 方案A（推荐）：导出 Markdown（最现实）
+
+👉 editor 加按钮：
+
+```js
+function exportMarkdown(content) {
+  const md = `# 标题\n\n${content}`
+
+  const blob = new Blob([md], { type: "text/markdown" })
+  const url = URL.createObjectURL(blob)
+
+  const a = document.createElement("a")
+  a.href = url
+  a.download = "article.md"
+  a.click()
+}
+```
+
+👉 手动放到：
 
 ```bash
-git add app/
-git commit -m "add learning app"
-git push
-```
-
-访问：
-
-```bash
-https://你的域名/app/
+/docs/learn/xxx.md
 ```
 
 ---
 
-# 六、和你原系统的融合（关键一步）
+## ⚠️ 方案B：GitHub API（进阶）
 
-你未来可以这样打通：
+可以做到：
 
----
+👉 浏览器直接提交到 repo
 
-## 在 Markdown 页面里加入口：
+但需要：
 
-```markdown
-[开始录音](/app/recorder.html)
-[今日复习](/app/index.html)
-```
+* token（安全问题）
+* API调用
+* 权限管理
 
----
-
-👉 这一步非常关键：
-
-内容 → 行为 → 复习
-形成闭环
+👉 不建议你现在做
 
 ---
 
-# 七、我帮你把路线再拉直一点
+## 🚀 方案C（未来形态）
 
-你现在正确顺序是：
+👉 App → 后端 → 自动生成 Markdown → push
+
+这个才是产品级
+
+---
+
+# 八、我帮你总结当前最优落地方案
+
+你现在应该这样推进：
 
 ---
 
 ## 第一阶段（现在）
 
-✅ 录音
-✅ 本地存储
-✅ 看板
+✅ 语音写文章
+✅ 保存到本地
+✅ 和音频统一管理
 
 ---
 
 ## 第二阶段（很快）
 
-👉 二维码 → 直接打开 recorder
+✅ 导出 Markdown
+✅ 手动发布到 docs
 
 ---
 
-## 第三阶段（你真正的壁垒）
+## 第三阶段（以后）
 
-👉 学习数据 → AI分析 → 个性化路径
-
----
-
-# 八、我给你的一个“冷静建议”
-
-你现在这个系统**不要急着做漂亮或复杂**。
-
-你真正要验证的是：
-
-👉 孩子会不会每天点开“今日复习”
+✅ 自动发布（API）
+✅ AI润色文章
+✅ 自动生成课程内容
 
 ---
 
-# 九、下一步我可以帮你做的（非常关键）
+# 九、我给你一个关键提醒（非常重要）
 
-我可以继续帮你：
+你现在已经有两个系统：
 
-✅ 把这套代码改成**完整可运行版本（含 IndexedDB 存取）**
-✅ 加一个“完成复习按钮（打勾）”
-✅ 接入你之前的二维码生成系统（自动生成 recorder 链接）
-✅ 或直接帮你升级成 Next.js 版本（更强扩展）
+👉 **行为系统（app）**
+👉 **内容系统（docs）**
 
 ---
 
-你下一步只需要说一句：
-
-👉 **“把这个改成完整可运行版本（含存储）”**
-
-我会直接给你一套能上线用的代码，而不是demo。
-
-# part 3
-我先帮你把话说清楚一点：
-👉 现在**没法直接替你“写进 GitHub 仓库”**，因为你没有给我 repo 的写权限或具体分支信息。
-
-但别卡在这——我直接给你一套**“复制进去就能跑”的完整版本**，并且严格按照你现在的 LearningOS 结构来设计。你只需要：
-
-> 👉 复制 → 提交 → push → 立刻可用
+❌ 不要试图把它们合并
+✔ 要做的是“桥接”（导出 / 发布）
 
 ---
 
-# 一、最终效果（你会得到什么）
+# 十、下一步建议（你选一个）
 
-打开：
+我可以继续帮你把这个系统变得很强：
 
+---
+
+👉 选项1：
+**“做文章列表页 + 文件夹详情页”**（可用性大提升）
+
+👉 选项2：
+**“实现一键导出为标准 Markdown（带格式模板）”**
+
+👉 选项3：
+**“接入 OpenAI / Whisper，实现更稳定语音转文字”**
+
+👉 选项4（产品级）：
+**“浏览器直接发布到 GitHub（完整自动化）”**
+
+---
+
+你现在已经不是在“做网站”了，而是在搭一个**教育内容生产系统**。
+
+说一句你要哪个方向，我帮你把那一块做到“能用级别”，不是demo。
+
+
+# 帮我实现一键导出为标准 Markdown（带格式模板）
+
+# 好，这一步做对了，你的系统就真正打通了：
+
+👉 **“写 → 存 → 导出 → 发布（docs）”**
+
+我直接给你一个**可直接用的一键导出 Markdown（带模板）方案**，而且是**兼容你现有 LearningOS 结构**的。
+
+---
+
+# 一、目标效果（你会得到什么）
+
+在 `editor.html` 里点击一个按钮：
+
+✅ 自动生成规范 Markdown
+✅ 自动带学习结构（目标 / 内容 / 测试 / 复习）
+✅ 文件名自动规范（用于 docs 路径）
+✅ 一键下载 `.md`
+
+---
+
+# 二、Markdown模板（核心设计）
+
+👉 这个模板我帮你对齐你现有 docs 风格（像“面条的历史”）
+
+```md id="tpl1"
+# {{title}}
+
+## 🎯 学习目标
+{{goals}}
+
+## 📖 内容
+{{content}}
+
+## 🔊 音频
+{{audio}}
+
+## 🧠 记忆点
+{{memory}}
+
+## ❓ 小测试
+{{quiz}}
+
+## 🔁 复习建议
+- 第1天：学习
+- 第3天：复习
+- 第7天：复习
 ```
-/app/
-```
-
-你可以：
-
-✅ 创建“今天的文件夹”
-✅ 录音并保存
-✅ 自动生成复习计划
-✅ 看“今天要复习的音频”
-✅ 播放 + 标记完成
 
 ---
 
-# 二、直接放进你仓库的代码（完整）
+# 三、实现代码（直接可用）
 
-## 📁 新建目录
+## 📁 新建：`/app/js/exporter.js`
 
-```
-/app
-  ├── index.html
-  ├── recorder.html
-  └── js/
-        db.js
-        recorder.js
-        scheduler.js
-        app.js
-```
-
----
-
-# 三、核心代码（完整可运行）
-
----
-
-## 1️⃣ db.js（完整存储）
-
-```js
-const DB_NAME = "learning_os"
-const STORE = "audios"
-
-export function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1)
-
-    req.onupgradeneeded = () => {
-      const db = req.result
-      db.createObjectStore(STORE, { keyPath: "id" })
-    }
-
-    req.onsuccess = () => resolve(req.result)
-    req.onerror = reject
-  })
+```js id="exp001"
+function formatList(text) {
+  if (!text) return "- （待补充）"
+  return text
+    .split("\n")
+    .filter(l => l.trim())
+    .map(l => `- ${l}`)
+    .join("\n")
 }
 
-export async function saveAudio(audio) {
-  const db = await openDB()
-  const tx = db.transaction(STORE, "readwrite")
-  tx.objectStore(STORE).put(audio)
-  return tx.complete
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\u4e00-\u9fa5]+/g, "-")
+    .replace(/^-+|-+$/g, "")
 }
 
-export async function getAllAudios() {
-  const db = await openDB()
-  const tx = db.transaction(STORE, "readonly")
-  return tx.objectStore(STORE).getAll()
+export function generateMarkdown(data) {
+  const {
+    title,
+    content,
+    goals,
+    memory,
+    quiz,
+    audioFiles
+  } = data
+
+  const audioSection = (audioFiles || [])
+    .map(a => `<audio controls src="/audio/${a}"></audio>`)
+    .join("\n\n") || "（暂无音频）"
+
+  return `# ${title}
+
+## 🎯 学习目标
+${formatList(goals)}
+
+## 📖 内容
+${content || "（待补充）"}
+
+## 🔊 音频
+${audioSection}
+
+## 🧠 记忆点
+${formatList(memory)}
+
+## ❓ 小测试
+${formatList(quiz)}
+
+## 🔁 复习建议
+- 第1天：学习
+- 第3天：复习
+- 第7天：复习
+`
 }
 
-export async function updateAudio(audio) {
-  return saveAudio(audio)
+export function downloadMarkdown(filename, text) {
+  const blob = new Blob([text], { type: "text/markdown;charset=utf-8" })
+  const url = URL.createObjectURL(blob)
+
+  const a = document.createElement("a")
+  a.href = url
+  a.download = filename
+  a.click()
+
+  URL.revokeObjectURL(url)
+}
+
+export function buildFilename(title) {
+  const slug = slugify(title)
+  return `${slug || "article"}.md`
 }
 ```
 
 ---
 
-## 2️⃣ recorder.js
+# 四、接入 editor.html（关键）
 
-```js
-export async function recordAudio(onStop) {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-  const recorder = new MediaRecorder(stream)
+👉 在你现有 `editor.html` 里加：
 
-  let chunks = []
+---
 
-  recorder.ondataavailable = e => chunks.push(e.data)
+## 1️⃣ UI输入（建议最小版本）
 
-  recorder.onstop = () => {
-    const blob = new Blob(chunks, { type: "audio/webm" })
-    onStop(blob)
+```html id="ui001"
+<h3>标题</h3>
+<input id="title" />
+
+<h3>学习目标（每行一个）</h3>
+<textarea id="goals"></textarea>
+
+<h3>正文</h3>
+<textarea id="content" rows="10"></textarea>
+
+<h3>记忆点</h3>
+<textarea id="memory"></textarea>
+
+<h3>小测试</h3>
+<textarea id="quiz"></textarea>
+
+<button id="export">导出 Markdown</button>
+```
+
+---
+
+## 2️⃣ 导出逻辑
+
+```html id="ui002"
+<script type="module">
+import {
+  generateMarkdown,
+  downloadMarkdown,
+  buildFilename
+} from "./js/exporter.js"
+
+document.getElementById("export").onclick = () => {
+  const data = {
+    title: document.getElementById("title").value,
+    content: document.getElementById("content").value,
+    goals: document.getElementById("goals").value,
+    memory: document.getElementById("memory").value,
+    quiz: document.getElementById("quiz").value,
+    audioFiles: [] // 先空，后面可自动关联
   }
 
-  recorder.start()
+  const md = generateMarkdown(data)
+  const filename = buildFilename(data.title)
 
-  return recorder
-}
-```
-
----
-
-## 3️⃣ scheduler.js
-
-```js
-const intervals = [0, 1, 3, 7]
-
-export function createReviews(ts) {
-  return intervals.map(d => ({
-    date: ts + d * 86400000,
-    done: false
-  }))
-}
-
-export function isToday(ts) {
-  const a = new Date(ts).toDateString()
-  const b = new Date().toDateString()
-  return a === b
-}
-```
-
----
-
-## 4️⃣ app.js
-
-```js
-import { getAllAudios, updateAudio } from "./db.js"
-import { isToday } from "./scheduler.js"
-
-export async function renderTodayList() {
-  const audios = await getAllAudios()
-
-  const list = audios.filter(a =>
-    a.reviews.some(r => !r.done && isToday(r.date))
-  )
-
-  const el = document.getElementById("list")
-
-  el.innerHTML = ""
-
-  list.forEach(audio => {
-    const li = document.createElement("li")
-
-    const url = URL.createObjectURL(audio.blob)
-
-    li.innerHTML = `
-      <audio controls src="${url}"></audio>
-      <button>完成</button>
-    `
-
-    li.querySelector("button").onclick = async () => {
-      audio.reviews.forEach(r => {
-        if (!r.done && isToday(r.date)) r.done = true
-      })
-
-      await updateAudio(audio)
-      renderTodayList()
-    }
-
-    el.appendChild(li)
-  })
-}
-```
-
----
-
-# 四、页面
-
----
-
-## recorder.html
-
-```html
-<h2>录音</h2>
-<button id="start">开始</button>
-<button id="stop">停止</button>
-
-<ul id="list"></ul>
-
-<script type="module">
-import { recordAudio } from "./js/recorder.js"
-import { saveAudio } from "./js/db.js"
-import { createReviews } from "./js/scheduler.js"
-
-let recorder
-
-document.getElementById("start").onclick = async () => {
-  recorder = await recordAudio(async (blob) => {
-    const audio = {
-      id: Date.now().toString(),
-      blob,
-      createdAt: Date.now(),
-      reviews: createReviews(Date.now())
-    }
-
-    await saveAudio(audio)
-
-    alert("保存成功")
-  })
-}
-
-document.getElementById("stop").onclick = () => {
-  recorder.stop()
+  downloadMarkdown(filename, md)
 }
 </script>
 ```
 
 ---
 
-## index.html（看板）
+# 五、和你现有系统打通（关键点）
 
-```html
-<h1>今日复习</h1>
+你现在已经有：
 
-<a href="recorder.html">去录音</a>
+👉 录音系统（audio 存在 IndexedDB）
 
-<ul id="list"></ul>
+下一步可以这样接：
 
-<script type="module">
-import { renderTodayList } from "./js/app.js"
+---
 
-renderTodayList()
-</script>
+## 自动把“同文件夹音频”带进去
+
+你可以在导出时：
+
+```js id="exp002"
+const audios = await getAllAudios()
+
+const sameFolder = audios
+  .filter(a => a.folder === today && a.type === "audio")
+  .map(a => a.id + ".webm")
+```
+
+然后传给：
+
+```js
+audioFiles: sameFolder
 ```
 
 ---
 
-# 五、部署（你只要做这个）
+# 六、最终使用流程（你要的闭环）
+
+现在你可以：
+
+---
+
+## Step 1
+
+语音输入文章（editor）
+
+## Step 2
+
+保存（本地）
+
+## Step 3
+
+点击 👉 导出 Markdown
+
+## Step 4
+
+拖进：
 
 ```bash
-git add app
-git commit -m "add learning app"
-git push
+/docs/learn/xxx.md
 ```
 
-访问：
+## Step 5
 
-```
-https://你的域名/app/
-```
+Git push → 自动发布
 
 ---
 
-# 六、你现在拥有的能力（很重要）
+# 七、我帮你再往前推一步（关键建议）
 
-这不是demo了，你现在已经有：
+你现在其实已经有一个很强的能力：
 
-✅ 本地数据库（IndexedDB）
-✅ 录音系统
-✅ 艾宾浩斯复习
-✅ 可操作UI
+👉 **“低成本内容生产流水线”**
 
-👉 这已经是一个“学习产品雏形”
+但还差一个关键优化：
 
 ---
 
-# 七、我帮你指出一个下一步关键升级（别忽略）
+## 👉 自动路径建议（强烈建议加）
 
-你现在缺一个很关键的东西：
+导出时提示：
 
-👉 **“文件夹（按日期组织）”**
-
-下一步建议加：
-
-```js
-folder: "2026-04-20"
-```
-
-然后 UI 按 folder 分类
-
----
-
-# 八、下一步我可以继续帮你（建议做）
-
-你接下来最值得做的是：
-
-👉 **扫码直接进入 recorder 并绑定日期**
-
-比如：
-
-```
-/app/recorder.html?folder=2026-04-20
+```text
+建议路径：
+/docs/learn/chinese/food-history/xxx.md
 ```
 
 ---
 
-# 九、如果你想我继续带你往产品级走
+# 八、下一步（你应该做哪个最值）
 
-我可以下一步帮你：
-
-✅ 加“文件夹系统（UI + 数据结构）”
-✅ 做“学习统计（连续打卡）”
-✅ 接入你之前二维码系统（自动生成学习入口）
-✅ 或直接升级成 Next.js + 云同步版本
+我给你三个优先级：
 
 ---
 
-你现在这一步已经跨过最难的门槛了。
+## 🥇 第一优先（强烈建议）
 
-下一步你只需要说：
-
-👉 **“加文件夹系统” 或 “接入二维码”**
-
-# part 4
-很好，这一步开始“像产品了”。
-
-但我先帮你踩刹车一下：
-👉 **文件夹 ≠ 文件系统**
-你不需要真的建目录（那是服务器/数据库的事），你需要的是：
-
-👉 **“逻辑分组（按日期）”**
-
-我们直接把它做成**最简单但可扩展的数据结构**。
+👉 **导出时自动关联音频 + 文件夹**
 
 ---
 
-# 一、目标效果（你将得到）
+## 🥈 第二优先
 
-你现在系统会变成：
-
-✅ 自动创建“今天的文件夹（日期）”
-✅ 录音自动归属到这个文件夹
-✅ 看板按文件夹组织
-✅ 支持切换不同日期
+👉 **做“文章列表页（按文件夹）”**
 
 ---
 
-# 二、数据结构升级（核心）
+## 🥉 第三优先
 
-之前 audio 是这样：
+👉 **一键复制到剪贴板（比下载更快）**
 
-```js
-{
-  id,
-  blob,
-  createdAt,
-  reviews
+---
+
+# 九、我给你一句直白判断
+
+你现在这个系统已经不只是“个人网站”了：
+
+👉 **你在做一个“教育内容生产工具链”**
+
+---
+
+如果你继续，我建议你下一步让我帮你做：
+
+👉 **“导出时自动带音频 + 自动路径 + 文件夹绑定”**（这一步非常关键）
+
+或者直接说：
+
+👉 **“做一键发布到 GitHub”**（我可以带你做完整版）
+
+# 帮我实现导出时自动带音频、自动路径和文件夹绑定
+
+好，这一步我帮你把**“导出 → 可直接发布”**做到接近一键化，而且不引入后端。
+但先说清一个边界（避免你误解）：
+👉 浏览器不能直接把音频写进你的 GitHub 仓库 所以我们能做到的是：
+👉 导出 = Markdown + 音频文件 + 推荐路径（结构完整）
+你只需要“拖进去 + git push”
+
+一、最终效果（你会得到什么）
+点击导出后：
+✅ 下载一个 .md 文件（已带模板） ✅ 同时下载该文件夹下所有音频（自动命名） ✅ 自动生成建议路径（直接放 docs） ✅ Markdown 已自动引用这些音频
+
+二、设计核心（你必须理解）
+👉 我们做三件事：
+找同文件夹音频
+统一命名（关键）
+Markdown 自动引用路径
+
+三、实现代码（升级版 exporter.js）
+直接替换你之前的 /app/js/exporter.js
+
+✅ 完整版本
+// exporter.js
+
+import { getAllAudios } from "./db.js"
+import { getTodayFolder } from "./folder.js"
+
+function formatList(text) {
+  if (!text) return "- （待补充）"
+  return text
+    .split("\n")
+    .filter(l => l.trim())
+    .map(l => `- ${l}`)
+    .join("\n")
 }
-```
 
-👉 现在升级为：
-
-```js
-{
-  id,
-  blob,
-  createdAt,
-  folder: "2026-04-20",   // 👈 核心
-  reviews
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\u4e00-\u9fa5]+/g, "-")
+    .replace(/^-+|-+$/g, "")
 }
-```
 
----
+// 👉 获取同文件夹音频
+async function getFolderAudios(folder) {
+  const audios = await getAllAudios()
 
-👉 文件夹本质就是：
-
-```js
-"YYYY-MM-DD"
-```
-
-不用单独建表（先别复杂化）
-
----
-
-# 三、工具函数（新增 folder.js）
-
-📁 `/app/js/folder.js`
-
-```js
-export function getTodayFolder() {
-  return new Date().toISOString().slice(0, 10)
+  return audios.filter(
+    a => a.folder === folder && a.type !== "article"
+  )
 }
-```
 
----
+// 👉 下载音频文件
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob)
 
-# 四、改 recorder（关键改动）
+  const a = document.createElement("a")
+  a.href = url
+  a.download = filename
+  a.click()
 
-📄 recorder.html 中修改：
+  URL.revokeObjectURL(url)
+}
 
-```html
+// 👉 主函数
+export async function exportAll(data) {
+  const folder = data.folder || getTodayFolder()
+  const slug = slugify(data.title) || "article"
+
+  // ===== 1. 获取音频 =====
+  const audios = await getFolderAudios(folder)
+
+  // ===== 2. 重命名音频 =====
+  const audioFilenames = audios.map((a, i) => {
+    return `${slug}-audio-${i + 1}.webm`
+  })
+
+  // ===== 3. 下载音频 =====
+  audios.forEach((a, i) => {
+    downloadBlob(a.blob, audioFilenames[i])
+  })
+
+  // ===== 4. 生成Markdown音频引用 =====
+  const audioSection = audioFilenames.length
+    ? audioFilenames
+        .map(name => `<audio controls src="/audio/${name}"></audio>`)
+        .join("\n\n")
+    : "（暂无音频）"
+
+  // ===== 5. 生成Markdown =====
+  const md = `# ${data.title}
+
+## 🎯 学习目标
+${formatList(data.goals)}
+
+## 📖 内容
+${data.content || "（待补充）"}
+
+## 🔊 音频
+${audioSection}
+
+## 🧠 记忆点
+${formatList(data.memory)}
+
+## ❓ 小测试
+${formatList(data.quiz)}
+
+## 🔁 复习建议
+- 第1天：学习
+- 第3天：复习
+- 第7天：复习
+`
+
+  // ===== 6. 文件名 =====
+  const mdName =\n")
+}
+
+functi
+  // ===== 7. 下载 Markdown =====
+  downloadBlob(new Blob([md], { type: "text/markdown" }), mdName)
+
+  // ===== 8. 输出建议路径 =====
+  const suggestedPath =push”
+
+一、最终效果（你会得到什么）
+点击导出后：
+✅ 下载一个 
+  alert(
+`导出完成！
+
+请将文件放入：
+
+${suggestedPath}
+
+音频放入：
+/docs/public/audio/
+
+然后 git push`
+  )
+}
+
+四、editor.html 接入（关键）
+替换导出按钮逻辑：
 <script type="module">
-import { recordAudio } from "./js/recorder.js"
-import { saveAudio } from "./js/db.js"
-import { createReviews } from "./js/scheduler.js"
+import { exportAll } from "./js/exporter.js"
 import { getTodayFolder } from "./js/folder.js"
 
-let recorder
+document.getElementById("export").onclick = async () => {
+  const data = {
+    title: document.getElementById("title").value,
+    content: document.getElementById("content").value,
+    goals: document.getElementById("goals").value,
+    memory: document.getElementById("memory").value,
+    quiz: document.getElementById("quiz").value,
+    folder: getTodayFolder()
+  }
 
-const folder = getTodayFolder()
-
-document.getElementById("start").onclick = async () => {
-  recorder = await recordAudio(async (blob) => {
-    const audio = {
-      id: Date.now().toString(),
-      blob,
-      createdAt: Date.now(),
-      folder,  // 👈 新增
-      reviews: createReviews(Date.now())
-    }
-
-    await saveAudio(audio)
-
-    alert("保存到文件夹：" + folder)
-  })
-}
-
-document.getElementById("stop").onclick = () => {
-  recorder.stop()
+  await exportAll(data)
 }
 </script>
-```
 
----
+五、你现在的完整发布流程（已经很顺了）
 
-# 五、看板升级（按文件夹展示）
+1️⃣ 在浏览器
+录音
+写文章（语音输入）
 
-📄 app.js 修改：
+2️⃣ 点击导出
+得到：
+noodle.md
+noodle-audio-1.webm
+noodle-audio-2.webm
 
-```js
-import { getAllAudios, updateAudio } from "./db.js"
-import { isToday } from "./scheduler.js"
+3️⃣ 拖入项目
+/docs/learn/2026-04-20/noodle.md
+/docs/public/audio/noodle-audio-1.webm
 
-export async function renderTodayList() {
-  const audios = await getAllAudios()
+4️⃣ 发布
+git add .
+git commit -m "add article"
+git push
 
-  const grouped = {}
+六、关键优化（你已经接近产品级了）
+我建议你马上加一个小升级：
 
-  audios.forEach(a => {
-    if (!grouped[a.folder]) grouped[a.folder] = []
-    grouped[a.folder].push(a)
-  })
+👉 自动创建文件夹提示
+在 alert 里加：
+如果目录不存在，请创建：
+/docs/learn/2026-04-20/
 
-  const container = document.getElementById("list")
-  container.innerHTML = ""
+七、我帮你指出一个“真正的下一步”（很关键）
+你现在已经有：
+👉 内容生产 👉 学习行为 👉 发布链路
 
-  Object.keys(grouped).forEach(folder => {
-    const section = document.createElement("div")
+差最后一个核心能力：
+👉 “学习数据反馈 → AI生成内容”
 
-    section.innerHTML = `<h3>📁 ${folder}</h3>`
+八、如果你继续，我建议你做这个（优先级最高）
+👉 自动生成文章初稿（语音 → AI整理 → Markdown）
+或者：
+👉 一键发布到 GitHub（完全自动化）
 
-    grouped[folder].forEach(audio => {
-      const due = audio.reviews.some(r => !r.done && isToday(r.date))
-      if (!due) return
+你现在这套已经不是工具，而是：
+👉 一个可以演化成产品的系统雏形
 
-      const li = document.createElement("div")
-
-      const url = URL.createObjectURL(audio.blob)
-
-      li.innerHTML = `
-        <audio controls src="${url}"></audio>
-        <button>完成</button>
-      `
-
-      li.querySelector("button").onclick = async () => {
-        audio.reviews.forEach(r => {
-          if (!r.done && isToday(r.date)) r.done = true
-        })
-
-        await updateAudio(audio)
-        renderTodayList()
-      }
-
-      section.appendChild(li)
-    })
-
-    container.appendChild(section)
-  })
-}
-```
-
----
-
-# 六、UI小升级（强烈建议）
-
-📄 index.html：
-
-```html
-<h1>今日复习</h1>
-
-<a href="recorder.html">➕ 去录音</a>
-
-<div id="list"></div>
-```
-
----
-
-# 七、关键设计点评（这一步很关键）
-
-你现在实现的是：
-
-👉 **“隐式文件夹系统”**
-
-优点：
-
-* 不用额外表
-* 简单稳定
-* 可扩展（未来变数据库）
-
----
-
-# 八、下一步可以做的增强（建议顺序）
-
----
-
-## 1️⃣ 手动选择文件夹（很快要做）
-
-```js
-?folder=2026-04-20
-```
-
-👉 支持扫码进入指定日期
-
----
-
-## 2️⃣ 文件夹页面
-
-```bash
-/app/folder.html?date=2026-04-20
-```
-
-👉 查看当天所有录音
-
----
-
-## 3️⃣ 文件夹统计（很关键）
-
-* 今日录音数
-* 完成复习数
-* 连续打卡
-
----
-
-# 九、我给你一个重要提醒（避免你走偏）
-
-你现在这个系统的本质已经是：
-
-👉 **“行为记录系统（比内容重要）”**
-
-所以接下来重点不是：
-
-❌ UI
-❌ 动画
-❌ 技术复杂度
-
-而是：
-
-👉 **孩子是否每天点“今日复习”**
-
----
-
-# 十、如果你继续往下走，我建议你下一步做这个
-
-👉 **二维码直接绑定文件夹**
-
-比如：
-
-```bash
-/app/recorder.html?folder=2026-04-20
-```
-
-贴在练习本上
-
----
-
-# 如果你要，我可以继续帮你升级（建议做）
-
-你可以下一步让我帮你：
-
-👉 **“做 folder 页面 + URL 参数绑定”**（非常关键）
-👉 或 **“做学习统计（连续打卡）”**
-👉 或 **“接入二维码自动生成”**
-
-直接说一句你要哪个，我带你继续往产品级推进。
+下一步你只需要说一句：
+👉 “做一键发布 GitHub” 或 👉 “加 AI 自动整理文章”
+我可以直接帮你把那一块拉到产品级。

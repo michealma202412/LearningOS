@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎤 语音文章编辑器</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+    }
+
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      padding: 30px;
+      margin-top: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #7f8c8d;
+      margin-bottom: 30px;
+      font-size: 1.1em;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      min-height: 120px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-record {
+      background: #ff6b6b;
+      color: white;
+    }
+
+    .btn-record.listening {
+      background: #ff3b30;
+      animation: pulse 1.5s infinite;
+    }
+
+    .btn-save {
+      background: #4ecdc4;
+      color: white;
+    }
+
+    .btn-export {
+      background: #45b7d1;
+      color: white;
+    }
+
+    .btn-stop {
+      background: #95a5a6;
+      color: white;
+    }
+
+    .status {
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .status.recording {
+      background: #ffebee;
+      color: #e74c3c;
+      animation: blink 1s infinite;
+    }
+
+    .status.success {
+      background: #e8f5e9;
+      color: #2ecc71;
+    }
+
+    .status.error {
+      background: #ffebee;
+      color: #e74c3c;
+    }
+
+    .folder-info {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #3498db;
+    }
+
+    .folder-display {
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    .nav {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid #f0f0f0;
+    }
+
+    .nav a {
+      display: inline-block;
+      padding: 10px 20px;
+      background: #667eea;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      transition: background 0.3s;
+      margin: 0 10px;
+    }
+
+    .nav a:hover {
+      background: #764ba2;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { transform: scale(0.7); }
+      100% { opacity: 1; }
+    }
+
+    .word-count {
+      text-align: right;
+      font-size: 0.9em;
+      color: #7f8c8d;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎤 语音文章编辑器</h1>
+    <div class="subtitle">通过语音输入快速创建学习内容</div>
+    
+    <div class="folder-info">
+      <div><strong>当前文件夹：</strong> <span id="folderDisplay" class="folder-display">加载中...</span></div>
+    </div>
+
+    <div class="form-group">
+      <label for="title">文章标题</label>
+      <input type="text" id="title" placeholder="请输入文章标题">
+    </div>
+
+    <div class="form-group">
+      <label for="content">正文内容（语音输入）</label>
+      <textarea id="content" placeholder="点击「开始语音输入」按钮开始录入内容..."></textarea>
+      <div class="word-count"><span id="wordCount">0</span> 字符</div>
+    </div>
+
+    <div class="form-group">
+      <label for="goals">学习目标（每行一个）</label>
+      <textarea id="goals" placeholder="例如：了解人工智能的基本概念"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="memory">记忆点（每行一个）</label>
+      <textarea id="memory" placeholder="例如：机器学习是AI的一个分支"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="quiz">小测试（每行一个）</label>
+      <textarea id="quiz" placeholder="例如：什么是人工智能？"></textarea>
+    </div>
+
+    <div id="status" class="status" style="display: none;"></div>
+
+    <div class="btn-group">
+      <button id="startRecord" class="btn-record">🎤 开始语音输入</button>
+      <button id="stopRecord" class="btn-stop" disabled>⏹️ 停止</button>
+      <button id="save" class="btn-save">💾 保存文章</button>
+      <button id="export" class="btn-export">📤 导出 Markdown</button>
+    </div>
+
+    <div class="nav">
+      <a href="index.html">← 返回看板</a>
+      <a href="recorder.html">🎤 录音页面</a>
+      <a href="folder.html">📁 文件夹</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { SpeechToText } from './js/speech.js'
+    import { saveArticle, getArticlesByFolder } from './js/db.js'
+    import { exportAll } from './js/exporter.js'
+    import { getTodayFolder } from './js/scheduler.js'
+
+    let speechToText;
+    let currentFolder = getTodayFolder();
+    
+    // DOM elements
+    const startBtn = document.getElementById('startRecord');
+    const stopBtn = document.getElementById('stopRecord');
+    const saveBtn = document.getElementById('save');
+    const exportBtn = document.getElementById('export');
+    const contentArea = document.getElementById('content');
+    const statusDiv = document.getElementById('status');
+    const folderDisplay = document.getElementById('folderDisplay');
+    const wordCountSpan = document.getElementById('wordCount');
+    
+    // Update folder display
+    folderDisplay.textContent = currentFolder;
+    
+    // Initialize speech recognition
+    try {
+      speechToText = new SpeechToText('zh-CN');
+      
+      speechToText.setOnError((error) => {
+        statusDiv.textContent = `❌ 语音识别错误: ${error}`;
+        statusDiv.className = 'status error';
+        statusDiv.style.display = 'block';
+        
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        startBtn.classList.remove('listening');
+      });
+      
+      speechToText.setOnEnd(() => {
+        if (speechToText.isListening) {
+          // If it ended unexpectedly, show warning
+          statusDiv.textContent = '⚠️ 语音识别已结束，请重新开始';
+          statusDiv.className = 'status error';
+          statusDiv.style.display = 'block';
+          
+          startBtn.disabled = false;
+          stopBtn.disabled = true;
+          startBtn.classList.remove('listening');
+        }
+      });
+    } catch (error) {
+      statusDiv.textContent = `❌ 浏览器不支持语音识别: ${error.message}`;
+      statusDiv.className = 'status error';
+      statusDiv.style.display = 'block';
+      
+      startBtn.disabled = true;
+    }
+    
+    // Event listeners
+    startBtn.addEventListener('click', () => {
+      const isSuccess = speechToText.start((finalTranscript, interimTranscript) => {
+        // Append final transcript to content
+        if (finalTranscript) {
+          contentArea.value += finalTranscript;
+          updateWordCount();
+        }
+        
+        // Show interim transcript in status
+        if (interimTranscript) {
+          statusDiv.textContent = `🎤 识别中: ${interimTranscript}`;
+          statusDiv.className = 'status recording';
+          statusDiv.style.display = 'block';
+        }
+      });
+      
+      if (isSuccess) {
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        startBtn.classList.add('listening');
+        
+        statusDiv.textContent = '🎤 正在聆听... 请开始说话';
+        statusDiv.className = 'status recording';
+        statusDiv.style.display = 'block';
+      } else {
+        statusDiv.textContent = '❌ 无法启动语音识别';
+        statusDiv.className = 'status error';
+        statusDiv.style.display = 'block';
+      }
+    });
+    
+    stopBtn.addEventListener('click', () => {
+      speechToText.stop();
+      
+      statusDiv.textContent = '✅ 语音输入已停止';
+      statusDiv.className = 'status success';
+      statusDiv.style.display = 'block';
+      
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      startBtn.classList.remove('listening');
+    });
+    
+    saveBtn.addEventListener('click', async () => {
+      const title = document.getElementById('title').value;
+      const content = document.getElementById('content').value;
+      
+      if (!title.trim()) {
+        statusDiv.textContent = '❌ 请先输入文章标题';
+        statusDiv.className = 'status error';
+        statusDiv.style.display = 'block';
+        return;
+      }
+      
+      if (!content.trim()) {
+        statusDiv.textContent = '❌ 请先输入文章内容';
+        statusDiv.className = 'status error';
+        statusDiv.style.display = 'block';
+        return;
+      }
+      
+      try {
+        const article = {
+          id: Date.now().toString(),
+          title: title,
+          content: content,
+          goals: document.getElementById('goals').value,
+          memory: document.getElementById('memory').value,
+          quiz: document.getElementById('quiz').value,
+          folder: currentFolder,
+          createdAt: Date.now(),
+          type: "article"
+        };
+        
+        await saveArticle(article);
+        
+        statusDiv.textContent = '✅ 文章已保存！';
+        statusDiv.className = 'status success';
+        statusDiv.style.display = 'block';
+        
+        setTimeout(() => {
+          statusDiv.style.display = 'none';
+        }, 3000);
+      } catch (error) {
+        statusDiv.textContent = `❌ 保存失败: ${error.message}`;
+        statusDiv.className = 'status error';
+        statusDiv.style.display = 'block';
+      }
+    });
+    
+    exportBtn.addEventListener('click', async () => {
+      const title = document.getElementById('title').value;
+      const content = document.getElementById('content').value;
+      
+      if (!title.trim()) {
+        statusDiv.textContent = '❌ 请先输入文章标题';
+        statusDiv.className = 'status error';
+        statusDiv.style.display = 'block';
+        return;
+      }
+      
+      if (!content.trim()) {
+        statusDiv.textContent = '❌ 请先输入文章内容';
+        statusDiv.className = 'status error';
+        statusDiv.style.display = 'block';
+        return;
+      }
+      
+      try {
+        const data = {
+          title: title,
+          content: content,
+          goals: document.getElementById('goals').value,
+          memory: document.getElementById('memory').value,
+          quiz: document.getElementById('quiz').value,
+          folder: currentFolder
+        };
+        
+        await exportAll(data);
+      } catch (error) {
+        statusDiv.textContent = `❌ 导出失败: ${error.message}`;
+        statusDiv.className = 'status error';
+        statusDiv.style.display = 'block';
+      }
+    });
+    
+    // Update word count
+    contentArea.addEventListener('input', updateWordCount);
+    
+    function updateWordCount() {
+      const text = contentArea.value;
+      wordCountSpan.textContent = text.length;
+    }
+  </script>
+</body>
+</html>

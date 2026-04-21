@@ -3,54 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LearningOS - 文件夹详情</title>
+  <title>📁 文件夹详情</title>
   <style>
-    * {
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
       min-height: 100vh;
-      padding: 20px;
     }
 
     .container {
-      max-width: 900px;
+      max-width: 1000px;
       margin: 0 auto;
+      padding: 20px;
     }
 
     .header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
       background: white;
       border-radius: 12px;
-      padding: 30px;
-      margin-bottom: 30px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
 
-    h1 {
-      color: #333;
-      font-size: 28px;
-      margin-bottom: 10px;
+    .header h1 {
+      margin: 0 0 10px 0;
+      color: #2c3e50;
     }
 
     .folder-date {
-      color: #999;
-      font-size: 16px;
-      margin-bottom: 20px;
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #3498db;
+      margin-bottom: 15px;
     }
 
     .stats {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 15px;
-      margin-top: 20px;
+      margin: 20px 0;
     }
 
-    .stat-item {
+    .stat-card {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       padding: 15px;
@@ -65,72 +62,77 @@
     }
 
     .stat-label {
-      font-size: 12px;
+      font-size: 14px;
       opacity: 0.9;
     }
 
     .actions {
       display: flex;
-      gap: 10px;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 20px;
       flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
-
-    button, a {
-      padding: 10px 20px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-      text-decoration: none;
-      transition: all 0.3s;
-      display: inline-block;
     }
 
     .btn-primary {
-      background: #4CAF50;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .btn-primary:hover {
-      background: #45a049;
       transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     }
 
     .btn-secondary {
-      background: #667eea;
+      padding: 12px 24px;
+      background: #95a5a6;
       color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: bold;
+      transition: background 0.3s;
     }
 
     .btn-secondary:hover {
-      background: #764ba2;
-      transform: translateY(-2px);
+      background: #7f8c8d;
     }
 
     .btn-danger {
-      background: #f44336;
+      padding: 8px 16px;
+      background: #e74c3c;
       color: white;
-      padding: 6px 12px;
-      font-size: 12px;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
     }
 
     .btn-danger:hover {
-      background: #da190b;
+      background: #c0392b;
     }
 
     .content {
       background: white;
       border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      padding: 25px;
+      margin-bottom: 20px;
     }
 
-    h2 {
-      color: #333;
-      margin-bottom: 20px;
-      font-size: 22px;
+    .section-title {
+      color: #2c3e50;
       border-bottom: 2px solid #667eea;
       padding-bottom: 10px;
+      margin-top: 30px;
     }
 
     .empty-state {
@@ -144,7 +146,7 @@
       margin-bottom: 15px;
     }
 
-    .audio-item {
+    .audio-item, .article-item {
       background: #f9f9f9;
       border-left: 4px solid #667eea;
       padding: 15px;
@@ -156,28 +158,35 @@
       flex-wrap: wrap;
     }
 
+    .article-item {
+      border-left-color: #4ECDC4;
+      background: #f0f9ff;
+    }
+
     .audio-item audio {
       flex: 1;
       min-width: 200px;
     }
 
-    .audio-info {
+    .audio-info, .article-info {
       flex: 1;
       min-width: 150px;
     }
 
-    .audio-id {
+    .audio-id, .article-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 5px;
+    }
+
+    .audio-time, .article-meta {
       font-size: 12px;
       color: #999;
       margin-bottom: 5px;
     }
 
-    .audio-time {
-      font-size: 12px;
-      color: #999;
-    }
-
-    .audio-actions {
+    .audio-actions, .article-actions {
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
@@ -244,13 +253,17 @@
 
       <div class="actions">
         <a href="recorder.html" id="recordBtn" class="btn-primary">🎤 新增录音</a>
+        <a href="editor.html" id="writeBtn" class="btn-primary">📝 写文章</a>
         <a href="index.html" class="btn-secondary">← 返回看板</a>
       </div>
     </div>
 
     <div class="content">
-      <h2>🎵 所有录音</h2>
+      <h2 class="section-title">🎵 音频文件</h2>
       <div id="audioList"></div>
+      
+      <h2 class="section-title">📝 文章</h2>
+      <div id="articleList"></div>
     </div>
   </div>
 
@@ -263,48 +276,80 @@
     // 从 URL 参数获取日期
     const urlParams = new URLSearchParams(window.location.search)
     const dateParam = urlParams.get('date')
-    
     if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
       currentFolder = dateParam
     } else {
-      currentFolder = new Date().toISOString().slice(0, 10)
+      // 默认显示今天
+      const today = new Date()
+      currentFolder = today.toISOString().split('T')[0]
     }
 
     async function init() {
-      // 更新标题和导航
-      document.getElementById("folderDate").textContent = getFolderDateString(currentFolder)
+      document.getElementById("folderDate").textContent = currentFolder
+      
+      // 设置按钮链接
       document.getElementById("recordBtn").href = `recorder.html?folder=${currentFolder}`
+      document.getElementById("writeBtn").href = `editor.html?folder=${currentFolder}`
 
-      // 获取数据
-      const allAudios = await getAllAudios()
-      const folderAudios = await getAudiosByFolder(currentFolder)
-      const stats = calculateFolderStats(allAudios, currentFolder)
+      // 显示加载状态
+      document.getElementById("audioList").innerHTML = '<div class="loading"><span class="spinner"></span> 加载中...</div>'
+      document.getElementById("articleList").innerHTML = '<div class="loading"><span class="spinner"></span> 加载中...</div>'
 
-      // 显示统计
-      const statsDiv = document.getElementById("stats")
-      statsDiv.innerHTML = `
-        <div class="stat-item">
+      try {
+        const allAudios = await getAllAudios()
+        const folderAudios = allAudios.filter(a => a.folder === currentFolder && a.type === "audio")
+        const folderArticles = allAudios.filter(a => a.folder === currentFolder && a.type === "article")
+        
+        // 更新统计信息
+        const stats = calculateFolderStats([...folderAudios, ...folderArticles], currentFolder)
+        updateStats(stats)
+        
+        // 渲染音频列表
+        renderAudioList(folderAudios)
+        
+        // 渲染文章列表
+        renderArticleList(folderArticles)
+      } catch (error) {
+        console.error("加载文件夹内容失败:", error)
+        document.getElementById("audioList").innerHTML = `<div class="empty-state"><p>❌ 加载失败: ${error.message}</p></div>`
+        document.getElementById("articleList").innerHTML = `<div class="empty-state"><p>❌ 加载失败: ${error.message}</p></div>`
+      }
+    }
+
+    function updateStats(stats) {
+      const statsContainer = document.getElementById("stats")
+      statsContainer.innerHTML = `
+        <div class="stat-card">
           <div class="stat-number">${stats.totalRecordings}</div>
-          <div class="stat-label">总录音数</div>
+          <div class="stat-label">总项目数</div>
         </div>
-        <div class="stat-item">
+        <div class="stat-card">
+          <div class="stat-number">${stats.totalAudios}</div>
+          <div class="stat-label">音频数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">${stats.totalArticles}</div>
+          <div class="stat-label">文章数</div>
+        </div>
+        <div class="stat-card">
           <div class="stat-number">${stats.completedReviews}/${stats.totalReviews}</div>
-          <div class="stat-label">完成复习</div>
+          <div class="stat-label">已完成/总复习</div>
         </div>
-        <div class="stat-item">
+        <div class="stat-card">
           <div class="stat-number">${stats.completionRate}%</div>
           <div class="stat-label">完成率</div>
         </div>
       `
+    }
 
-      // 显示音频列表
+    function renderAudioList(folderAudios) {
       const listDiv = document.getElementById("audioList")
       
       if (folderAudios.length === 0) {
         listDiv.innerHTML = `
           <div class="empty-state">
-            <div class="empty-icon">📭</div>
-            <p>该文件夹中没有录音</p>
+            <div class="empty-icon">🎙️</div>
+            <p>该文件夹中没有音频</p>
             <p style="font-size: 12px; color: #ccc; margin-top: 10px;">点击"新增录音"按钮添加内容</p>
           </div>
         `
@@ -378,6 +423,95 @@
           if (confirm("确定要删除这条录音吗？此操作不可撤销。")) {
             await deleteAudio(audio.id)
             init() // 刷新页面
+          }
+        }
+        actionsDiv.appendChild(deleteBtn)
+      })
+    }
+
+    function renderArticleList(folderArticles) {
+      const listDiv = document.getElementById("articleList")
+      
+      if (folderArticles.length === 0) {
+        listDiv.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📝</div>
+            <p>该文件夹中没有文章</p>
+            <p style="font-size: 12px; color: #ccc; margin-top: 10px;">点击"写文章"按钮添加内容</p>
+          </div>
+        `
+        return
+      }
+
+      listDiv.innerHTML = ""
+
+      folderArticles.forEach(article => {
+        const articleDiv = document.createElement("div")
+        articleDiv.className = "article-item"
+
+        const createdDate = new Date(article.createdAt).toLocaleString('zh-CN')
+        const contentPreview = article.content.length > 100 
+          ? article.content.substring(0, 100) + "..." 
+          : article.content
+
+        articleDiv.innerHTML = `
+          <div class="article-info" style="flex: 1; min-width: 200px;">
+            <div class="article-title">${article.title || '无标题文章'}</div>
+            <div class="article-meta">创建: ${createdDate}</div>
+            <div style="margin-top: 10px; font-size: 14px; color: #555; line-height: 1.5;">
+              ${contentPreview}
+            </div>
+          </div>
+          <div class="article-actions" id="article_actions_${article.id}">
+          </div>
+        `
+
+        listDiv.appendChild(articleDiv)
+
+        // 添加操作按钮
+        const actionsDiv = articleDiv.querySelector(`#article_actions_${article.id}`)
+
+        // 查看全文按钮
+        const viewBtn = document.createElement("button")
+        viewBtn.className = "btn-primary"
+        viewBtn.textContent = "👁️ 查看"
+        viewBtn.style.padding = "8px 12px"
+        viewBtn.style.fontSize = "12px"
+        viewBtn.onclick = () => {
+          // Create a temporary page to show the full article
+          const articleWindow = window.open('', '_blank')
+          articleWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <title>${article.title || '文章'}</title>
+              <style>
+                body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+                h1 { color: #333; }
+                .metadata { color: #666; font-size: 0.9em; margin-bottom: 20px; }
+                .content { line-height: 1.6; }
+              </style>
+            </head>
+            <body>
+              <h1>${article.title || '无标题文章'}</h1>
+              <div class="metadata">
+                文件夹: ${article.folder} | 创建于: ${new Date(article.createdAt).toLocaleString()}
+              </div>
+              <div class="content">${article.content.replace(/\n/g, '<br>')}</div>
+            </body>
+            </html>
+          `)
+        }
+        actionsDiv.appendChild(viewBtn)
+
+        // 删除按钮
+        const deleteBtn = document.createElement("button")
+        deleteBtn.className = "btn-danger"
+        deleteBtn.textContent = "🗑️ 删除"
+        deleteBtn.onclick = async () => {
+          if (confirm("确定要删除这篇文章吗？此操作不可撤销。")) {
+            await deleteAudio(article.id) // Articles are stored in the same store
+            init() // Refresh the page
           }
         }
         actionsDiv.appendChild(deleteBtn)

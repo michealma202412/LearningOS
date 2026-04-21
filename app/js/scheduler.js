@@ -23,28 +23,35 @@ export function getFolderDateString(folder) {
   return date.toLocaleDateString('zh-CN', options)
 }
 
-export function calculateFolderStats(audios, folder) {
-  const folderAudios = audios.filter(a => a.folder === folder)
+export function calculateFolderStats(items, folder) {
+  const folderItems = items.filter(item => item.folder === folder)
   
-  const totalRecordings = folderAudios.length
+  const totalRecordings = folderItems.length
+  const totalAudios = folderItems.filter(item => item.type === "audio").length
+  const totalArticles = folderItems.filter(item => item.type === "article").length
   
   let completedReviews = 0
   let totalReviews = 0
   
-  folderAudios.forEach(audio => {
-    audio.reviews.forEach(review => {
-      totalReviews++
-      if (review.done) completedReviews++
-    })
+  // Only calculate reviews for audio items (which have reviews property)
+  const audioItems = folderItems.filter(item => item.type === "audio");
+  audioItems.forEach(audio => {
+    if (audio.reviews && Array.isArray(audio.reviews)) {
+      audio.reviews.forEach(review => {
+        totalReviews++;
+        if (review.done) completedReviews++;
+      });
+    }
   })
   
   const completionRate = totalReviews > 0 ? Math.round((completedReviews / totalReviews) * 100) : 0
   
   return {
     totalRecordings,
+    totalAudios,
+    totalArticles,
     completedReviews,
     totalReviews,
     completionRate
   }
 }
-
