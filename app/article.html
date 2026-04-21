@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文章查看 - LearningOS</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f8f9fa;
+      color: #333;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eaeaea;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2em;
+      color: #2c3e50;
+    }
+
+    .back-link {
+      color: #3498db;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    .edit-btn {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-left: 10px;
+    }
+
+    .edit-btn:hover {
+      background-color: #2980b9;
+    }
+
+    .section {
+      margin-bottom: 25px;
+    }
+
+    h2 {
+      color: #2c3e50;
+      border-left: 4px solid #3498db;
+      padding-left: 12px;
+      font-size: 1.4em;
+    }
+
+    .content-preview {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .audio-player {
+      background-color: #f1f9ff;
+      padding: 15px;
+      border-radius: 6px;
+      border-left: 4px solid #3498db;
+    }
+
+    .audio-controls {
+      margin-top: 10px;
+    }
+
+    .meta-info {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      color: #666;
+    }
+
+    .error-message {
+      color: #e74c3c;
+      text-align: center;
+      padding: 20px;
+      font-size: 1.1em;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      font-size: 1.1em;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>文章详情</h1>
+    <a href="#" id="backLink" class="back-link">← 返回文件夹</a>
+  </div>
+
+  <div id="loading" class="loading">加载中...</div>
+  <div id="errorMessage" class="error-message" style="display: none;"></div>
+  
+  <div id="content" style="display: none;">
+    <div class="section">
+      <h2>📝 标题</h2>
+      <div class="content-preview" id="titlePreview"></div>
+    </div>
+
+    <div class="section">
+      <h2>🎯 学习目标</h2>
+      <div class="content-preview" id="goalsPreview"></div>
+    </div>
+
+    <div class="section">
+      <h2>📖 正文</h2>
+      <div class="content-preview" id="contentPreview"></div>
+    </div>
+
+    <div class="section">
+      <h2>🔊 关联音频</h2>
+      <div id="audioSection">
+        <p>暂无关联音频</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🧠 记忆点</h2>
+      <div class="content-preview" id="memoryPreview"></div>
+    </div>
+
+    <div class="section">
+      <h2>❓ 小测试</h2>
+      <div class="content-preview" id="quizPreview"></div>
+    </div>
+
+    <div class="section">
+      <h2>📅 创建信息</h2>
+      <div class="meta-info" id="metaInfo"></div>
+    </div>
+
+    <div style="margin-top: 30px; text-align: center;">
+      <a href="#" id="editBtn" class="edit-btn">✏️ 编辑文章</a>
+      <button id="exportBtn" class="edit-btn" style="background-color: #2ecc71;">📤 导出 Markdown</button>
+    </div>
+  </div>
+
+  <script src="js/db.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 获取URL参数中的文章ID
+      const urlParams = new URLSearchParams(window.location.search);
+      const articleId = urlParams.get('id');
+      
+      if (!articleId) {
+        showError('未提供文章ID');
+        return;
+      }
+
+      try {
+        // 从数据库获取文章
+        const db = await initDB();
+        const article = await db.get('articles', articleId);
+        
+        if (!article) {
+          showError('找不到指定的文章');
+          return;
+        }
+
+        // 设置返回链接
+        const backLink = document.getElementById('backLink');
+        backLink.href = `folder.html?folder=${article.folder}`;
+        
+        // 设置编辑链接
+        const editBtn = document.getElementById('editBtn');
+        editBtn.href = `editor.html?id=${article.id}&folder=${article.folder}`;
+        
+        // 设置导出功能
+        const exportBtn = document.getElementById('exportBtn');
+        exportBtn.onclick = async (e) => {
+          e.preventDefault();
+          
+          try {
+            // 动态导入exporter模块
+            const { downloadMarkdown } = await import('./js/exporter.js');
+            downloadMarkdown(article);
+          } catch (err) {
+            console.error('导出失败:', err);
+            alert('导出功能出现问题，请稍后重试');
+          }
+        };
+
+        // 渲染文章内容
+        document.getElementById('titlePreview').textContent = article.title || '无标题';
+        document.getElementById('goalsPreview').textContent = article.goals || '暂无学习目标';
+        document.getElementById('contentPreview').textContent = article.content || '暂无正文内容';
+        document.getElementById('memoryPreview').textContent = article.memory || '暂无记忆点';
+        document.getElementById('quizPreview').textContent = article.quiz || '暂无小测试';
+
+        // 显示元信息
+        const metaInfo = document.getElementById('metaInfo');
+        const createdDate = article.createdAt ? new Date(article.createdAt).toLocaleString('zh-CN') : '未知';
+        metaInfo.innerHTML = `
+          <strong>📋 文章ID:</strong> ${article.id}<br>
+          <strong>📁 文件夹:</strong> ${article.folder}<br>
+          <strong>🕐 创建时间:</strong> ${createdDate}<br>
+          <strong>📝 类型:</strong> ${article.type || 'article'}
+        `;
+
+        // 查找并显示关联音频
+        const audioSection = document.getElementById('audioSection');
+        
+        try {
+          const allItems = await db.getAll('items');
+          const relatedAudios = allItems.filter(item => 
+            item.type === 'audio' && 
+            item.folder === article.folder &&
+            Math.abs(item.createdAt - article.createdAt) < 600000 // 10分钟内创建的视为相关
+          );
+
+          if (relatedAudios.length > 0) {
+            audioSection.innerHTML = '';
+            relatedAudios.forEach((audio, index) => {
+              const audioDiv = document.createElement('div');
+              audioDiv.className = 'audio-player';
+              
+              const audioTitle = document.createElement('div');
+              const audioTime = audio.createdAt ? new Date(audio.createdAt).toLocaleTimeString('zh-CN') : '未知时间';
+              audioTitle.textContent = `🎙️ 音频 ${index + 1} - ${audioTime}`;
+              audioTitle.style.fontWeight = 'bold';
+              audioTitle.style.marginBottom = '10px';
+              
+              const audioControls = document.createElement('div');
+              audioControls.className = 'audio-controls';
+              
+              const audioEl = document.createElement('audio');
+              if (audio.blob) {
+                audioEl.src = URL.createObjectURL(audio.blob);
+                audioEl.controls = true;
+                audioEl.style.width = '100%';
+              } else {
+                audioEl.innerHTML = '<p style="color: #999;">音频文件不可用</p>';
+              }
+              
+              audioControls.appendChild(audioEl);
+              audioDiv.appendChild(audioTitle);
+              audioDiv.appendChild(audioControls);
+              audioSection.appendChild(audioDiv);
+            });
+          } else {
+            audioSection.innerHTML = '<p style="color: #999; font-style: italic;">💡 此文章没有关联的音频文件<br><small>提示：在录音后10分钟内创建的文章会自动关联</small></p>';
+          }
+        } catch (audioError) {
+          console.error('加载音频失败:', audioError);
+          audioSection.innerHTML = '<p style="color: #e74c3c;">⚠️ 加载音频失败，但不影响文章查看</p>';
+        }
+
+        // 显示内容，隐藏加载提示
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+      } catch (error) {
+        console.error('加载文章失败:', error);
+        showError('加载文章失败: ' + error.message);
+      }
+    });
+
+    function showError(message) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('errorMessage').textContent = message;
+      document.getElementById('errorMessage').style.display = 'block';
+    }
+  </script>
+</body>
+</html>

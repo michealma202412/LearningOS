@@ -119,42 +119,20 @@ export async function renderTodayList() {
             </div>
           `
 
-          // Add view article button
-          const viewButton = document.createElement("button")
+          // Add view article button that links to the new article page
+          const viewButton = document.createElement("a")
           viewButton.textContent = "👁️ 查看全文"
+          viewButton.href = `article.html?id=${item.id}`
           viewButton.style.padding = "8px 16px"
           viewButton.style.backgroundColor = "#2196F3"
           viewButton.style.color = "white"
+          viewButton.style.textDecoration = "none"
           viewButton.style.border = "none"
           viewButton.style.borderRadius = "4px"
           viewButton.style.cursor = "pointer"
           viewButton.style.marginRight = "10px"
-
-          viewButton.onclick = () => {
-            // Create a temporary page to show the full article
-            const articleWindow = window.open('', '_blank')
-            articleWindow.document.write(`
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <title>${item.title || '文章'}</title>
-                <style>
-                  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-                  h1 { color: #333; }
-                  .metadata { color: #666; font-size: 0.9em; margin-bottom: 20px; }
-                  .content { line-height: 1.6; }
-                </style>
-              </head>
-              <body>
-                <h1>${item.title || '无标题文章'}</h1>
-                <div class="metadata">
-                  文件夹: ${item.folder} | 创建于: ${new Date(item.createdAt).toLocaleString()}
-                </div>
-                <div class="content">${(item.content || '').replace(/\n/g, '<br>')}</div>
-              </body>
-              </html>
-            `)
-          }
+          viewButton.style.display = "inline-block"
+          viewButton.style.fontSize = "14px"
 
           div.appendChild(viewButton)
         }

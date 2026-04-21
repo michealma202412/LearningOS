@@ -266,8 +266,25 @@
     try {
       speechToText = new SpeechToText('zh-CN');
       
+      console.log('✅ 语音识别初始化成功');
+      
       speechToText.setOnError((error) => {
-        statusDiv.textContent = `❌ 语音识别错误: ${error}`;
+        console.error('❌ 语音识别错误:', error);
+        
+        let errorMessage = `❌ 语音识别错误`;
+        
+        // 提供更具体的错误提示
+        if (error.includes('not-allowed') || error.includes('permission')) {
+          errorMessage = '❌ 麦克风权限被拒绝\n\n请允许浏览器访问麦克风后重试';
+        } else if (error.includes('no-speech')) {
+          errorMessage = '⚠️ 未检测到语音\n\n请确保麦克风正常工作并大声说话';
+        } else if (error.includes('network')) {
+          errorMessage = '❌ 网络连接问题\n\n语音识别需要网络连接，请检查网络状态';
+        } else {
+          errorMessage = `❌ 语音识别错误: ${error}`;
+        }
+        
+        statusDiv.textContent = errorMessage;
         statusDiv.className = 'status error';
         statusDiv.style.display = 'block';
         
@@ -279,6 +296,7 @@
       speechToText.setOnEnd(() => {
         if (speechToText.isListening) {
           // If it ended unexpectedly, show warning
+          console.warn('⚠️ 语音识别意外结束');
           statusDiv.textContent = '⚠️ 语音识别已结束，请重新开始';
           statusDiv.className = 'status error';
           statusDiv.style.display = 'block';
@@ -289,11 +307,18 @@
         }
       });
     } catch (error) {
-      statusDiv.textContent = `❌ 浏览器不支持语音识别: ${error.message}`;
+      console.error('❌ 浏览器不支持语音识别:', error);
+      statusDiv.innerHTML = `
+        ❌ 浏览器不支持语音识别
+        
+        💡 建议使用 Chrome 浏览器以获得最佳体验
+        📝 您也可以手动输入文章内容
+      `;
       statusDiv.className = 'status error';
       statusDiv.style.display = 'block';
       
       startBtn.disabled = true;
+      startBtn.title = '您的浏览器不支持语音识别';
     }
     
     // Event listeners

@@ -244,16 +244,20 @@
       listContainer.innerHTML = '<div class="loading"><div class="spinner"></div>加载中...</div>'
 
       try {
+        console.log('📊 开始加载今日复习数据...')
         await renderTodayList()
 
         // 更新统计数据
         const audios = await getAllAudios()
+        console.log(`📈 从数据库获取到 ${audios.length} 个项目`)
+        
         // 修改这部分代码以正确统计包含文章在内的所有今日项目
         const todayItems = audios.filter(item => {
           // 对于音频项目，检查是否有待完成的复习
           if (item.type === "audio") {
             // 确保音频有reviews属性
             if (!item.reviews || !Array.isArray(item.reviews)) {
+              console.warn(`⚠️ 音频 ${item.id} 缺少reviews属性`);
               return false;
             }
             return item.reviews.some(r => !r.done && isToday(r.date));
@@ -266,19 +270,34 @@
 
         document.getElementById("totalCount").textContent = todayItems.length;
         document.getElementById("totalFolders").textContent = folders.size;
+        
+        console.log(`✅ 今日待复习: ${todayItems.length} 个项目, ${folders.size} 个文件夹`)
 
         if (todayItems.length === 0) {
           listContainer.innerHTML = `
             <div class="empty-state">
               <div class="empty-state-icon">🎉</div>
               <div class="empty-state-text">太棒了！今天没有待复习的项目</div>
-              <p style="color: #ccc; font-size: 14px;">去 <a href="recorder.html" style="color: #667eea; text-decoration: underline;">录音页面</a> 或 <a href="editor.html" style="color: #667eea; text-decoration: underline;">写文章</a> 添加新内容吧</p>
+              <p style="color: #ccc; font-size: 14px;">
+                💡 建议：<br>
+                • 去 <a href="recorder.html" style="color: #667eea; text-decoration: underline;">录音页面</a> 录制新内容<br>
+                • 或 <a href="editor.html" style="color: #667eea; text-decoration: underline;">写文章</a> 记录学习心得
+              </p>
             </div>
           `
         }
       } catch (error) {
-        console.error("加载失败:", error)
-        listContainer.innerHTML = '<div class="empty-state"><p>❌ 加载失败，请刷新页面重试</p></div>'
+        console.error("❌ 加载失败:", error)
+        listContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">❌</div>
+            <p><strong>加载失败</strong></p>
+            <p style="font-size: 14px; color: #999;">${error.message}</p>
+            <p style="font-size: 12px; color: #ccc; margin-top: 15px;">
+              💡 建议：刷新页面重试
+            </p>
+          </div>
+        `
       }
     }
 
