@@ -15,6 +15,110 @@
 
 ---
 
+## ⚙️ 环境准备与启动（重要！首次使用必读）
+
+### 🔴 常见问题：点击"开始录音"没反应
+
+**原因**：浏览器的 MediaRecorder API 和 getUserMedia 有严格的安全限制。
+
+**解决方案**：必须通过 localhost 或 HTTPS 访问，不能直接双击 HTML 文件（file:// 协议）。
+
+---
+
+### ✅ 正确启动步骤
+
+#### 1. 安装 Node.js（首次使用必需）
+
+**方法A：官方安装包（推荐）**
+1. 访问：https://nodejs.org/
+2. 下载 **LTS 版本**（长期支持版）
+3. 安装完成后，**完全关闭并重新打开 Git Bash**
+
+**方法B：Windows Winget**
+```bash
+winget install OpenJS.NodeJS.LTS
+```
+
+**验证安装**：
+```bash
+node --version
+npm --version
+```
+如果显示版本号（如 `v20.x.x`），说明安装成功！
+
+> 💡 **注意**：安装后必须重启终端才能生效
+
+---
+
+#### 2. 进入正确的目录
+
+```bash
+cd /c/2_Workspace/WS/006_LearningOS/LearningOS
+```
+
+> ⚠️ **常见错误**：在错误的目录运行命令会导致 "package.json not found" 错误
+
+---
+
+#### 3. 启动开发服务器
+
+**方法A：使用启动脚本（最简单，推荐）**
+```bash
+./start.bat
+```
+
+**方法B：手动启动**
+```bash
+npm run dev
+```
+
+成功后会看到：
+```
+VITE v5.x.x  ready in xxx ms
+
+➜  Local:   http://localhost:5173/LearningOS/
+```
+
+---
+
+#### 4. 访问应用
+
+在浏览器中打开：
+- 📊 **看板页**：http://localhost:5173/LearningOS/app/index.html
+- 🎤 **录音页**：http://localhost:5173/LearningOS/app/recorder.html
+- 📁 **文件夹**：http://localhost:5173/LearningOS/app/folder.html?date=2026-04-20
+
+---
+
+### 🐛 故障排除清单
+
+| 问题 | 原因 | 解决方案 |
+|------|------|----------|
+| `npm: command not found` | Node.js 未安装或未重启终端 | 安装 Node.js 并重启终端 |
+| `package.json not found` | 目录错误 | `cd LearningOS` 进入子目录 |
+| 录音按钮无反应 | 使用了 file:// 协议 | 必须通过 localhost:5173 访问 |
+| 麦克风权限被拒绝 | 浏览器安全策略 | 点击地址栏图标允许权限 |
+| Console 报错 "getUserMedia" | 环境不符合要求 | 确保使用 localhost 而非 file:// |
+
+---
+
+### 🔍 调试技巧
+
+**打开开发者工具（F12）**：
+1. 切换到 **Console** 标签查看错误
+2. 切换到 **Application** → IndexedDB 查看数据
+3. 切换到 **Network** 标签查看加载情况
+
+**检查录音功能**：
+```javascript
+// 在 Console 中运行
+navigator.mediaDevices.getUserMedia({ audio: true })
+  .then(() => console.log("✅ 麦克风可用"))
+  .catch(err => console.error("❌ 麦克风错误:", err))
+```
+
+---
+
 ## 🎤 如何录音
 
 ### 打开录音页面
