@@ -10,6 +10,7 @@ export function HomePage({ subjects }: HomePageProps) {
     <section>
       <h2>学习入口</h2>
       <p>选择一个学科开始扫码学习。</p>
+      
       <div className="card-grid">
         {subjects.map((subject) => (
           <Link key={subject.slug} className="card" to={`/learn/${subject.slug}`}>

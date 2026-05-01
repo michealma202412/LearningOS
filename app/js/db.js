@@ -47,25 +47,76 @@ export async function getCurrentUser() {
   });
 }
 
-export async function setCurrentUser(userId, username) {
+export async function setCurrentUser(userId, username, password = null) {
   localStorage.setItem('currentUserId', userId);
   
   const db = await openDB();
   const tx = db.transaction(USER_STORE, "readwrite");
   const store = tx.objectStore(USER_STORE);
   
-  const user = {
-    userId,
-    username,
-    createdAt: Date.now()
-  };
-  
-  store.put(user);
+  // Check if user already exists
+  return new Promise((resolve, reject) => {
+    const getRequest = store.get(userId);
+    getRequest.onsuccess = () => {
+      const existingUser = getRequest.result;
+      
+      const user = {
+        userId,
+        username,
+        password: password || (existingUser ? existingUser.password : null),
+        createdAt: existingUser ? existingUser.createdAt : Date.now(),
+        updatedAt: Date.now()
+      };
+      
+      store.put(user);
+      
+      tx.oncomplete = () => resolve(user);
+      tx.onerror = reject;
+    };
+    getRequest.onerror = reject;
+  });
+}
+
+// Verify user password
+export async function verifyPassword(userId, password) {
+  const db = await openDB();
+  const tx = db.transaction(USER_STORE, "readonly");
+  const store = tx.objectStore(USER_STORE);
   
   return new Promise((resolve, reject) => {
-    tx.oncomplete = () => resolve(user);
-    tx.onerror = reject;
+    const req = store.get(userId);
+    req.onsuccess = () => {
+      const user = req.result;
+      if (!user) {
+        resolve(false);
+        return;
+      }
+      
+      // If no password set, allow login without password check (backward compatibility)
+      if (!user.password) {
+        resolve(true);
+        return;
+      }
+      
+      // User has password set, must verify it matches
+      // Empty password input should fail
+      if (!password) {
+        resolve(false);
+        return;
+      }
+      
+      // Simple password comparison (in production, use proper hashing)
+      resolve(user.password === password);
+    };
+    req.onerror = reject;
   });
+}
+
+// Register new user with password
+export async function registerUser(username, password) {
+  const userId = 'user_' + Date.now();
+  await setCurrentUser(userId, username, password);
+  return { userId, username };
 }
 
 export async function getAllUsers() {
