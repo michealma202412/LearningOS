@@ -507,10 +507,208 @@
     body {
       padding-bottom: 80px;
     }
+
+    /* User Management */
+    .user-section {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 15px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .user-info {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .user-name {
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .user-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-user {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.3s;
+    }
+
+    .btn-switch {
+      background: #3498db;
+      color: white;
+    }
+
+    .btn-switch:hover {
+      background: #2980b9;
+    }
+
+    .btn-logout {
+      background: #95a5a6;
+      color: white;
+    }
+
+    .btn-logout:hover {
+      background: #7f8c8d;
+    }
+
+    /* Login Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .modal h2 {
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+
+    .modal input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    .modal input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .modal-buttons button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-login {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-login:hover {
+      background: #764ba2;
+    }
+
+    .btn-cancel {
+      background: #ecf0f1;
+      color: #2c3e50;
+    }
+
+    .btn-cancel:hover {
+      background: #d5dbdb;
+    }
+
+    .user-list {
+      margin-top: 15px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .user-list-item {
+      padding: 10px;
+      margin: 5px 0;
+      background: #f9f9f9;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-list-item:hover {
+      background: #f0f0f0;
+    }
+
   </style>
 </head>
 <body>
   <div class="container">
+    <!-- User Section -->
+    <div id="userSection" class="user-section" style="display: none;">
+      <div class="user-info">
+        <div class="user-avatar" id="userAvatar">👤</div>
+        <div class="user-name" id="userName">未登录</div>
+      </div>
+      <div class="user-actions">
+        <button class="btn-user btn-switch" onclick="showUserSwitch()">切换用户</button>
+        <button class="btn-user btn-logout" onclick="logoutUser()">退出</button>
+      </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal-overlay">
+      <div class="modal">
+        <h2>👋 欢迎使用 LearningOS</h2>
+        <input type="text" id="usernameInput" placeholder="请输入用户名" onkeypress="if(event.key==='Enter') login()">
+        <div class="modal-buttons">
+          <button class="btn-cancel" onclick="closeLoginModal()">取消</button>
+          <button class="btn-login" onclick="login()">登录</button>
+        </div>
+        <div id="existingUsers" class="user-list" style="display: none;">
+          <h3 style="margin: 15px 0 10px 0; color: #666; font-size: 14px;">或选择已有用户：</h3>
+          <div id="userListContainer"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Header -->
     <div class="header">
       <h1>📝 LearningOS</h1>
@@ -595,7 +793,7 @@
   </div>
 
   <script type="module">
-    import { saveAudio, getAllItems, updateItem, deleteItem } from './js/db.js'
+    import { saveAudio, getAllItems, updateItem, deleteItem, getCurrentUser, setCurrentUser, getAllUsers, logout } from './js/db.js'
     import { recordAudio } from './js/recorder.js'
     import { createReviews, getTodayFolder, isToday } from './js/scheduler.js'
     import { SpeechToText } from './js/speech.js'
@@ -607,10 +805,200 @@
     let currentAudioBlob = null
     let currentAudioUrl = null
 
-    // Initialize
+    // User Management Functions (must be defined before DOMContentLoaded)
+    window.showLoginModal = function() {
+      const modal = document.getElementById('loginModal')
+      if (modal) {
+        modal.classList.add('active')
+        const input = document.getElementById('usernameInput')
+        if (input) {
+          input.focus()
+        }
+        loadExistingUsers()
+      }
+    }
+
+    window.closeLoginModal = function() {
+      const modal = document.getElementById('loginModal')
+      if (modal) {
+        modal.classList.remove('active')
+      }
+      const input = document.getElementById('usernameInput')
+      if (input) {
+        input.value = ''
+      }
+    }
+
+    window.login = async function() {
+      const usernameInput = document.getElementById('usernameInput')
+      const username = usernameInput ? usernameInput.value.trim() : ''
+      
+      if (!username) {
+        alert('请输入用户名')
+        return
+      }
+      
+      try {
+        // Generate a simple user ID from username and timestamp
+        const userId = 'user_' + Date.now()
+        
+        await setCurrentUser(userId, username)
+        
+        const user = await getCurrentUser()
+        updateUserDisplay(user)
+        closeLoginModal()
+        
+        // Load data for the new user
+        await loadFileTree()
+        await loadReview()
+        
+        showStatus('✅ 欢迎, ' + username + '!', 'success')
+        setTimeout(() => {
+          const statusEl = document.getElementById('recordingStatus')
+          if (statusEl) statusEl.innerHTML = ''
+        }, 2000)
+      } catch (error) {
+        console.error('登录失败:', error)
+        alert('登录失败: ' + error.message)
+      }
+    }
+
+    window.logoutUser = async function() {
+      if (!confirm('确定要退出当前用户吗？')) {
+        return
+      }
+      
+      logout()
+      
+      // Hide user section
+      const userSection = document.getElementById('userSection')
+      if (userSection) {
+        userSection.style.display = 'none'
+      }
+      
+      // Clear all displays
+      const fileTreeView = document.getElementById('fileTreeView')
+      if (fileTreeView) {
+        fileTreeView.innerHTML = '<div id="loadingMsg">加载中...</div>'
+      }
+      const reviewView = document.getElementById('reviewView')
+      if (reviewView) {
+        reviewView.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">点击标题展开查看今日复习内容</p>'
+      }
+      
+      // Show login modal
+      showLoginModal()
+      
+      showStatus('✅ 已退出', 'success')
+      setTimeout(() => {
+        const statusEl = document.getElementById('recordingStatus')
+        if (statusEl) statusEl.innerHTML = ''
+      }, 2000)
+    }
+
+    window.showUserSwitch = function() {
+      showLoginModal()
+    }
+
+    function updateUserDisplay(user) {
+      if (!user) {
+        const userSection = document.getElementById('userSection')
+        if (userSection) {
+          userSection.style.display = 'none'
+        }
+        return
+      }
+      
+      const userSection = document.getElementById('userSection')
+      const userNameEl = document.getElementById('userName')
+      const userAvatarEl = document.getElementById('userAvatar')
+      
+      if (userSection) {
+        userSection.style.display = 'flex'
+      }
+      if (userNameEl) {
+        userNameEl.textContent = user.username
+      }
+      if (userAvatarEl) {
+        // Create avatar with first character of username
+        const firstChar = user.username.charAt(0).toUpperCase()
+        userAvatarEl.textContent = firstChar
+      }
+    }
+
+    async function loadExistingUsers() {
+      try {
+        const users = await getAllUsers()
+        
+        const existingUsersDiv = document.getElementById('existingUsers')
+        if (users.length === 0) {
+          if (existingUsersDiv) {
+            existingUsersDiv.style.display = 'none'
+          }
+          return
+        }
+        
+        if (existingUsersDiv) {
+          existingUsersDiv.style.display = 'block'
+        }
+        const container = document.getElementById('userListContainer')
+        
+        if (!container) return
+        
+        let html = ''
+        users.forEach(user => {
+          const firstChar = user.username.charAt(0).toUpperCase()
+          html += `
+            <div class="user-list-item" onclick="switchToUser('${user.userId}', '${user.username}')">
+              <div style="width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">
+                ${firstChar}
+              </div>
+              <span>${user.username}</span>
+            </div>
+          `
+        })
+        
+        container.innerHTML = html
+      } catch (error) {
+        console.error('加载用户列表失败:', error)
+      }
+    }
+
+    window.switchToUser = async function(userId, username) {
+      try {
+        await setCurrentUser(userId, username)
+        
+        const user = await getCurrentUser()
+        updateUserDisplay(user)
+        closeLoginModal()
+        
+        // Load data for the switched user
+        await loadFileTree()
+        await loadReview()
+        
+        showStatus('✅ 已切换到 ' + username, 'success')
+        setTimeout(() => {
+          const statusEl = document.getElementById('recordingStatus')
+          if (statusEl) statusEl.innerHTML = ''
+        }, 2000)
+      } catch (error) {
+        console.error('切换用户失败:', error)
+        alert('切换用户失败: ' + error.message)
+      }
+    }
+
+    // Initialize - Check user authentication first
     document.addEventListener('DOMContentLoaded', async () => {
       console.log('✅ LearningOS 已加载')
       
+      // Check if user is logged in
+      const user = await getCurrentUser()
+      if (!user) {
+        showLoginModal()
+      } else {
+        updateUserDisplay(user)
+      }
+
       // Initialize speech recognition
       try {
         speechToText = new SpeechToText('zh-CN')
@@ -733,6 +1121,14 @@
       
       if (!textContent && !currentAudioBlob) {
         alert('请至少输入文字或录制音频')
+        return
+      }
+      
+      // Check if user is logged in
+      const user = await getCurrentUser()
+      if (!user) {
+        alert('请先登录')
+        showLoginModal()
         return
       }
       
@@ -1292,6 +1688,13 @@
         console.error('加载复习失败:', error)
         container.innerHTML = '<p style="color: red;">加载失败</p>'
       }
+    }
+
+    // Show QR code
+    window.showQR = function() {
+      const url = window.location.href
+      alert(`二维码链接:\n${url}\n\n使用手机扫描此二维码可直接打开当前页面`)
+      // In production, use qrcode library to generate actual QR image
     }
   </script>
 </body>
