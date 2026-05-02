@@ -70,7 +70,7 @@ ${rawText}
 6. 重要性评分1-5星（5为最重要）
       `;
 
-      const response = await fetch(this.config.apiUrl, {
+      const response = await fetch(this.config.apiUrl!, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.config.apiKey}`,
