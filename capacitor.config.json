@@ -3,13 +3,19 @@
   "appName": "LearningOS",
   "webDir": "dist",
   "bundledWebRuntime": false,
+  "server": {
+    "cleartext": true,
+    "androidScheme": "https"
+  },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 2000,
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#ffffff",
+      "showSpinner": false
     },
     "StatusBar": {
-      "style": "dark"
+      "style": "dark",
+      "overlaysWebView": false
     }
   }
 }

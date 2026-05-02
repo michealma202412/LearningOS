@@ -5,15 +5,18 @@
  * - 查看笔记详情
  * - 播放录音（如果有）
  * - 删除笔记
+ * - 音频与笔记完整绑定
  */
 
 import { useEffect, useState } from 'react';
 import { getNotes, deleteNote } from '../../core/db/sqlite';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 export default function FilesPage() {
   const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [audioData, setAudioData] = useState<{[key: string]: string}>({}); // 存储音频 base64 数据
 
   useEffect(() => {
     loadNotes();
@@ -27,6 +30,24 @@ export default function FilesPage() {
       setLoading(true);
       const data = await getNotes();
       setNotes(data);
+      
+      // 预加载有音频的笔记的音频数据
+      for (const note of data) {
+        if (note.audio_path) {
+          try {
+            const result = await Filesystem.readFile({
+              path: note.audio_path,
+              directory: Directory.Documents,
+            });
+            setAudioData(prev => ({
+              ...prev,
+              [note.id]: result.data as string
+            }));
+          } catch (error) {
+            console.error(`❌ 加载音频失败 (${note.audio_path}):`, error);
+          }
+        }
+      }
     } catch (error) {
       console.error('❌ 加载笔记失败:', error);
       alert('加载失败：' + (error as Error).message);
@@ -41,13 +62,39 @@ export default function FilesPage() {
   const handleDelete = async (id: string) => {
     if (confirm('确定要删除这条记录吗？此操作不可恢复。')) {
       try {
+        // 先获取笔记信息以删除音频文件
+        const note = notes.find(n => n.id === id);
+        
+        // 删除数据库记录
         await deleteNote(id);
+        
+        // 删除音频文件（如果存在）
+        if (note?.audio_path) {
+          try {
+            await Filesystem.deleteFile({
+              path: note.audio_path,
+              directory: Directory.Documents,
+            });
+            console.log('✅ 音频文件已删除:', note.audio_path);
+          } catch (error) {
+            console.error('⚠️ 删除音频文件失败:', error);
+            // 继续执行，不因音频删除失败而中断
+          }
+        }
+        
         loadNotes(); // 重新加载列表
         
         // 如果删除的是展开的项，关闭展开状态
         if (expandedId === id) {
           setExpandedId(null);
         }
+        
+        // 清除音频数据缓存
+        setAudioData(prev => {
+          const newData = { ...prev };
+          delete newData[id];
+          return newData;
+        });
       } catch (error) {
         console.error('❌ 删除失败:', error);
         alert('删除失败：' + (error as Error).message);
@@ -95,6 +142,7 @@ export default function FilesPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {notes.map((note) => {
             const isExpanded = expandedId === note.id;
+            const hasAudio = note.audio_path && audioData[note.id];
 
             return (
               <div
@@ -193,17 +241,26 @@ export default function FilesPage() {
                         justifyContent: 'space-between',
                         fontSize: '12px',
                         color: '#9ca3af',
+                        flexWrap: 'wrap',
+                        gap: '10px',
                       }}
                     >
                       <span>📅 {new Date(note.createdAt).toLocaleString()}</span>
                       {note.tags && <span>🏷️ {note.tags}</span>}
+                      {hasAudio && <span>🎤 有录音</span>}
                     </div>
 
                     {/* 音频播放器（如果有） */}
-                    {note.audio_path && (
+                    {hasAudio && (
                       <div style={{ marginTop: '15px' }}>
-                        <audio controls style={{ width: '100%' }}>
-                          <source src={`data:audio/wav;base64,...`} type="audio/wav" />
+                        <p style={{ fontSize: '14px', color: '#667eea', marginBottom: '8px' }}>
+                          🎵 录音回放：
+                        </p>
+                        <audio 
+                          controls 
+                          style={{ width: '100%' }}
+                          src={`data:audio/wav;base64,${audioData[note.id]}`}
+                        >
                           您的浏览器不支持音频播放
                         </audio>
                       </div>
@@ -223,7 +280,7 @@ export default function FilesPage() {
                     }}
                     onClick={() => toggleExpand(note.id)}
                   >
-                    👆 点击查看详情
+                    👆 点击查看详情 {note.audio_path ? '🎤' : ''}
                   </p>
                 )}
               </div>
@@ -234,3 +291,5 @@ export default function FilesPage() {
     </div>
   );
 }
+
+

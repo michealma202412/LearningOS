@@ -19,6 +19,7 @@ export function useStreamingRecorder(options: UseStreamingRecorderOptions = {}) 
 
   const [isRecording, setIsRecording] = useState(false);
   const [transcribedText, setTranscribedText] = useState('');
+  const [audioPath, setAudioPath] = useState(''); // 新增：音频文件路径
 
   const recorderRef = useRef(new NativeRecorder());
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -31,6 +32,7 @@ export function useStreamingRecorder(options: UseStreamingRecorderOptions = {}) 
     try {
       await recorderRef.current.start();
       setIsRecording(true);
+      setAudioPath(''); // 重置音频路径
       textRef.current = '';
       setTranscribedText('');
 
@@ -74,8 +76,9 @@ export function useStreamingRecorder(options: UseStreamingRecorderOptions = {}) 
       try {
         const result = await recorderRef.current.stop();
         setIsRecording(false);
+        setAudioPath(result.filePath); // 保存音频路径
 
-        console.log('✅ 录音已停止，时长:', result.duration, 's');
+        console.log('✅ 录音已停止，时长:', result.duration, 's, 路径:', result.filePath);
 
         return {
           text: textRef.current,
@@ -106,6 +109,7 @@ export function useStreamingRecorder(options: UseStreamingRecorderOptions = {}) 
 
     recorderRef.current.cancel();
     setIsRecording(false);
+    setAudioPath(''); // 清空音频路径
     textRef.current = '';
     setTranscribedText('');
 
@@ -127,6 +131,7 @@ export function useStreamingRecorder(options: UseStreamingRecorderOptions = {}) 
   return {
     isRecording,
     transcribedText,
+    audioPath, // 新增：返回音频路径
     start,
     stop,
     cancel,

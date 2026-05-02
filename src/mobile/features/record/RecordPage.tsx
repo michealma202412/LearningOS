@@ -6,6 +6,7 @@
  * - 实时文字显示
  * - 标题和标签编辑
  * - 保存到本地 SQLite 数据库
+ * - 音频文件与笔记绑定
  */
 
 import { useState } from 'react';
@@ -21,6 +22,7 @@ export default function RecordPage() {
   const {
     isRecording,
     transcribedText,
+    audioPath, // 新增：获取音频路径
     start,
     stop,
     cancel,
@@ -43,10 +45,12 @@ export default function RecordPage() {
     try {
       const id = uuid();
 
+      // 保存笔记，包含音频路径
       await insertNote({
         id,
         title: title || `记录 ${new Date().toLocaleTimeString()}`,
         content: transcribedText,
+        audio_path: audioPath || '', // 关键修复：保存音频路径
         tags,
       });
 
@@ -248,7 +252,8 @@ export default function RecordPage() {
           <li>点击「开始录音」后开始说话</li>
           <li>说完后点击「停止录音」保存音频</li>
           <li>录音过程中可以手动编辑文字</li>
-          <li>支持后台录音（切换到其他应用仍继续录音）</li>
+          <li>✅ 音频自动保存到本地文件系统</li>
+          <li>✅ 音频与笔记自动关联</li>
         </ul>
       </div>
 

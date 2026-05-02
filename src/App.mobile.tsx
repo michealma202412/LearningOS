@@ -6,6 +6,8 @@
  * - 文件
  * - 复习
  * - 扫码
+ * 
+ * 支持离线访问和后台同步
  */
 
 import { useState, useEffect } from 'react';
@@ -20,6 +22,7 @@ type TabType = 'record' | 'files' | 'review' | 'scanner';
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('record');
   const [dbInitialized, setDbInitialized] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   // 初始化数据库
   useEffect(() => {
@@ -36,6 +39,58 @@ export default function App() {
     };
 
     initialize();
+  }, []);
+
+  // 注册 Service Worker（离线支持）
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('/sw.js')
+          .then((registration) => {
+            console.log('✅ Service Worker 注册成功:', registration.scope);
+          })
+          .catch((error) => {
+            console.error('❌ Service Worker 注册失败:', error);
+          });
+      });
+    }
+  }, []);
+
+  // 监听网络状态变化
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('✅ 网络已连接');
+      setIsOnline(true);
+      
+      // 触发后台同步（如果支持）
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+          // @ts-ignore - SyncManager is not in standard TypeScript types yet
+          if (registration.sync) {
+            // @ts-ignore
+            registration.sync.register('sync-notes').catch((error: any) => {
+              console.log('⚠️ 后台同步不可用:', error);
+            });
+          }
+        }).catch((error) => {
+          console.log('⚠️ Service Worker 未就绪:', error);
+        });
+      }
+    };
+
+    const handleOffline = () => {
+      console.log('⚠️ 网络已断开，进入离线模式');
+      setIsOnline(false);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   if (!dbInitialized) {
@@ -61,6 +116,22 @@ export default function App() {
         paddingBottom: '70px', // 为底部导航留空间
       }}
     >
+      {/* 网络状态提示 */}
+      {!isOnline && (
+        <div
+          style={{
+            background: '#fef3c7',
+            color: '#92400e',
+            padding: '8px 16px',
+            textAlign: 'center',
+            fontSize: '14px',
+            borderBottom: '1px solid #fcd34d',
+          }}
+        >
+          ⚠️ 离线模式 - 数据将保存在本地，联网后自动同步
+        </div>
+      )}
+
       {/* 页面内容区域 */}
       {activeTab === 'record' && <RecordPage />}
       {activeTab === 'files' && <FilesPage />}
