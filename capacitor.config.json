@@ -1,0 +1,15 @@
+{
+  "appId": "com.learningos.app",
+  "appName": "LearningOS",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#ffffff"
+    },
+    "StatusBar": {
+      "style": "dark"
+    }
+  }
+}

@@ -10,11 +10,22 @@ const certExists = fs.existsSync(path.join(certPath, 'localhost+4.pem'))
 export default defineConfig(({ command }) => {
   const config = {
     plugins: [react()],
-    base: '/LearningOS/',
+    base: '/', // Capacitor 使用根路径
     server: {
       host: true,
       port: 5173
-    }
+    },
+    build: {
+      outDir: 'dist',
+      sourcemap: false,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ['react', 'react-dom'],
+          },
+        },
+      },
+    },
   }
 
   // 只在开发模式且证书存在时启用 HTTPS
