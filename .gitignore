@@ -17,7 +17,7 @@ yarn-error.log*
 
 # editor directories and files
 .vscode/*
-!.vscode/startup.md
+!.vscode/extensions.json
 .idea/
 *.suo
 *.ntvs*
@@ -31,8 +31,63 @@ Thumbs.db
 # test coverage
 /coverage/
 
-# local lock file for npm if not committed
-# package-lock.json
+# temporary test files
+*-test.html
+test-*.html
+test-*.js
+test-*.cjs
+verify-*.js
+verify-*.ts
+debug-*.html
+complete-*-test.html
 
-# optional: ignore runtime logs
-*.log
+# old documentation (merged into PROJECT_GUIDE.md)
+EXPO_GO_*.md
+IOS_*.md
+MOBILE_*.md
+QUICK_*.md
+Mobile_*.md
+Safari_*.md
+*_IMPLEMENTATION.md
+*_REPORT.md
+*_GUIDE.md
+*_REFERENCE.md
+*_CHECKLIST.md
+*_SUMMARY.md
+*_PREPARATION.md
+*_TESTING.md
+*_ACCESS.md
+*_FEATURE.md
+*_OPTIMIZATION.md
+*_BUTTON.md
+*_VERIFICATION.md
+*_AUTH_*.md
+*_FIX_*.md
+
+# build/deploy scripts (optional, can be regenerated)
+build-*.bat
+setup-*.bat
+run-*.sh
+push-*.bat
+cleanup-*.bat
+
+# SSL certificates (can be regenerated)
+ssl/
+mkcert.exe
+*.pem
+*.key
+*.crt
+
+# old app version
+app/
+mobile-access.html
+
+# Expo cache
+.expo/
+web-build/
+
+# Capacitor generated folders (keep ios/ and android/ but ignore build artifacts)
+ios/App/DerivedData/
+ios/App/build/
+android/app/build/
+android/.gradle/
